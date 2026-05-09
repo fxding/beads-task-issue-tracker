@@ -734,7 +734,7 @@ watch(
 <template>
   <div class="fixed inset-0 grid grid-rows-[1fr_auto] bg-background">
     <!-- Main content container -->
-    <div id="zoomable-content" class="overflow-hidden">
+    <div id="zoomable-content" class="h-full overflow-hidden">
       <div class="flex overflow-hidden">
         <!-- Left Sidebar - Dashboard (hidden in edit mode) -->
         <aside
