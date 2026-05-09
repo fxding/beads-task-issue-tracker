@@ -121,7 +121,7 @@ watch(currentProjectName, (name) => {
 
 // Whether the current project is exposed to the probe (read from PathSelector)
 const isCurrentProjectExposed = computed(() => {
-  return pathSelectorRef.value?.isCurrentExposed || mobilePathSelectorRef.value?.isCurrentExposed || false
+  return pathSelectorRef.value?.isCurrentExposed || false
 })
 
 // Show onboarding when no project is selected (no stored path and no projects)
@@ -129,9 +129,8 @@ const showOnboarding = computed(() => {
   return projects.value.length === 0 && !hasStoredPath.value
 })
 
-// Refs to PathSelector to open folder picker (desktop and mobile)
+// Ref to PathSelector to open folder picker
 const pathSelectorRef = ref<InstanceType<typeof PathSelector> | null>(null)
-const mobilePathSelectorRef = ref<InstanceType<typeof PathSelector> | null>(null)
 
 // Onboarding folder picker state
 const isOnboardingPickerOpen = ref(false)
@@ -139,7 +138,7 @@ const { setPath } = useBeadsPath()
 
 const openFolderPicker = () => {
   // Try PathSelector refs first, fallback to onboarding picker
-  const ref = pathSelectorRef.value || mobilePathSelectorRef.value
+  const ref = pathSelectorRef.value
   if (ref) {
     ref.isPickerOpen = true
   } else {
@@ -170,17 +169,6 @@ const editId = computed(() => {
   }
   return undefined
 })
-
-// Mobile state
-const isMobileView = ref(false)
-const mobilePanel = ref<'dashboard' | 'issues' | 'details'>('issues')
-
-// Check viewport size
-const checkViewport = () => {
-  if (import.meta.client) {
-    isMobileView.value = window.innerWidth < 1024
-  }
-}
 
 // Sync status composable (for auto-sync indicator and error dialog)
 const { showErrorDialog: showSyncErrorDialog, lastSyncError, closeErrorDialog: closeSyncErrorDialog } = useSyncStatus()
@@ -261,10 +249,7 @@ const { start: startPolling, stop: stopPolling } = useAdaptivePolling(pollForCha
 })
 
 onMounted(async () => {
-  checkViewport()
   if (import.meta.client) {
-    window.addEventListener('resize', checkViewport)
-
     // Detect CLI client (br vs bd) for feature gating
     await initCliClient()
 
@@ -319,7 +304,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (import.meta.client) {
-    window.removeEventListener('resize', checkViewport)
     stopListening()
     stopPolling()
     stopPeriodicCheck()
@@ -525,11 +509,7 @@ const handleAddIssue = () => {
   selectIssue(null)
   isCreatingNew.value = true
   isEditMode.value = true
-  if (isMobileView.value) {
-    mobilePanel.value = 'details'
-  } else {
-    isRightSidebarOpen.value = true
-  }
+  isRightSidebarOpen.value = true
 }
 
 const handleSelectIssue = async (issue: Issue) => {
@@ -537,11 +517,7 @@ const handleSelectIssue = async (issue: Issue) => {
   selectIssue(issue)
   isEditMode.value = false
   isCreatingNew.value = false
-  if (isMobileView.value) {
-    mobilePanel.value = 'details'
-  } else {
-    isRightSidebarOpen.value = true
-  }
+  isRightSidebarOpen.value = true
   // Then fetch full details (including extended fields) in background
   await fetchIssue(issue.id)
 }
@@ -551,11 +527,7 @@ const handleEditIssueFromTable = async (issue: Issue) => {
   selectIssue(issue)
   isEditMode.value = true
   isCreatingNew.value = false
-  if (isMobileView.value) {
-    mobilePanel.value = 'details'
-  } else {
-    isRightSidebarOpen.value = true
-  }
+  isRightSidebarOpen.value = true
   // Then fetch full details (including extended fields) in background
   await fetchIssue(issue.id)
 }
@@ -726,11 +698,7 @@ const handleCreateChild = (parentId: string) => {
   selectIssue(null)
   isCreatingNew.value = true
   isEditMode.value = true
-  if (isMobileView.value) {
-    mobilePanel.value = 'details'
-  } else {
-    isRightSidebarOpen.value = true
-  }
+  isRightSidebarOpen.value = true
 }
 
 const handleRemoveLabelFilter = (label: string) => {
@@ -787,8 +755,7 @@ watch(
         @refresh="handleRefresh"
       />
 
-    <!-- Desktop Layout (3 columns) -->
-    <div v-if="!isMobileView" class="flex overflow-hidden">
+    <div class="flex overflow-hidden">
       <!-- Left Sidebar - Dashboard (hidden in edit mode) -->
       <aside
         v-show="!(isEditMode || isCreatingNew)"
@@ -1052,169 +1019,6 @@ watch(
         </div>
       </aside>
     </div>
-
-    <!-- Mobile Layout (tabs + stacked panels) -->
-    <div v-else class="flex flex-col overflow-hidden">
-      <!-- Mobile Navigation Tabs -->
-      <div class="flex border-b border-border bg-card">
-        <button
-          class="flex-1 py-3 text-sm font-medium transition-colors"
-          :class="mobilePanel === 'dashboard' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'"
-          @click="mobilePanel = 'dashboard'"
-        >
-          Dashboard
-        </button>
-        <button
-          class="flex-1 py-3 text-sm font-medium transition-colors"
-          :class="mobilePanel === 'issues' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'"
-          @click="mobilePanel = 'issues'"
-        >
-          Issues ({{ filteredIssues.length }})
-        </button>
-        <button
-          class="flex-1 py-3 text-sm font-medium transition-colors"
-          :class="mobilePanel === 'details' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'"
-          @click="mobilePanel = 'details'"
-        >
-          Details
-        </button>
-      </div>
-
-      <!-- Mobile Panels -->
-      <!-- Dashboard Panel -->
-      <ScrollArea v-if="mobilePanel === 'dashboard'" class="flex-1">
-        <div class="p-4 space-y-6">
-          <PathSelector v-if="!showOnboarding" ref="mobilePathSelectorRef" :is-loading="isLoading" @change="handlePathChange" @reset="handleReset" />
-
-          <DashboardContent
-            class="space-y-6"
-            :stats="stats"
-            :ready-issues="readyIssues"
-            :in-progress-issues="inProgressIssues"
-            :pinned-issues="pinnedIssuesList"
-            :pinned-sort-mode="pinnedSortMode"
-            :kpi-grid-cols="2"
-            :active-kpi-filter="activeKpiFilter"
-            :status-filters="filters.status"
-            :show-onboarding="showOnboarding"
-            @select-issue="handleSelectIssue"
-            @kpi-click="handleKpiClick"
-            @reorder-pinned="reorderPinned"
-            @unpin="togglePin"
-            @toggle-pinned-sort="togglePinnedSort"
-            @browse="openFolderPicker"
-          />
-        </div>
-      </ScrollArea>
-
-      <!-- Issues Panel -->
-      <div v-else-if="mobilePanel === 'issues'" class="flex-1 flex flex-col overflow-hidden">
-        <!-- Onboarding: Prerequisites Card -->
-        <PrerequisitesCard v-if="showOnboarding" @browse="openFolderPicker" />
-
-        <!-- Normal: Issues Toolbar and Table -->
-        <IssueListPanel
-          v-if="!showOnboarding"
-          v-model:search="searchValue"
-          v-model:selected-ids="selectedIds"
-          :filters="{ status: filters.status, type: filters.type, priority: filters.priority, labels: filters.labels, assignee: filters.assignee }"
-          :available-labels="availableLabels"
-          :available-assignees="availableAssignees"
-          :has-selection="multiSelectMode ? selectedIds.length > 0 : !!selectedIssue"
-          :multi-select-mode="multiSelectMode"
-          :selected-count="selectedIds.length"
-          :columns="columns"
-          :is-search-active="isSearchActive"
-          :issues="paginatedIssues"
-          :grouped-issues="groupedIssues"
-          :selected-id="selectedIssue?.id"
-          :has-more="hasMore"
-          :total-count="filteredIssues.length"
-          :sort-field="sortField"
-          :sort-direction="sortDirection"
-          :newly-added-ids="newlyAddedIds"
-          :pinned-ids="pinnedIssueIds"
-          @add="handleAddIssue"
-          @delete="handleDeleteIssue"
-          @toggle-multi-select="toggleMultiSelect"
-          @update:columns="setColumns"
-          @reset-columns="resetColumns"
-          @toggle-status="toggleStatus"
-          @toggle-type="toggleType"
-          @toggle-priority="togglePriority"
-          @toggle-label="toggleLabelFilter"
-          @toggle-assignee="toggleAssignee"
-          @remove-label="handleRemoveLabelFilter"
-          @clear-filters="clearFilters"
-          @select="handleSelectIssue"
-          @edit="handleEditIssueFromTable"
-          @deselect="handleDeselectIssue"
-          @load-more="loadMore"
-          @sort="setSort"
-          @toggle-pin="togglePin"
-        />
-      </div>
-
-      <!-- Details Panel -->
-      <div v-else-if="mobilePanel === 'details'" class="flex-1 flex flex-col overflow-hidden">
-        <!-- Fixed header for issue preview -->
-        <IssueDetailHeader
-          v-if="selectedIssue && !isEditMode && !isCreatingNew"
-          :selected-issue="selectedIssue"
-          :is-pinned="isPinned(selectedIssue.id)"
-          @edit="handleEditIssue"
-          @reopen="handleReopenIssue"
-          @close="handleCloseIssue"
-          @delete="handleDeleteIssue"
-          @toggle-pin="togglePin(selectedIssue.id)"
-        />
-
-        <!-- Form mode: form gère son propre scroll -->
-        <div v-if="isEditMode || isCreatingNew" class="flex-1 min-h-0 p-4 overflow-hidden">
-          <IssueForm
-            :issue="isCreatingNew ? null : selectedIssue"
-            :is-new="isCreatingNew"
-            :is-saving="isUpdating"
-            :available-epics="availableEpics"
-            :available-labels="availableLabels"
-            :default-parent="defaultParent"
-            @save="handleSaveIssue"
-            @cancel="handleCancelEdit"
-          />
-        </div>
-
-        <!-- Preview mode: ScrollArea pour le contenu -->
-        <ScrollArea v-else class="flex-1 min-h-0">
-          <div class="p-4">
-            <div v-if="selectedIssue">
-              <IssuePreview
-                :issue="selectedIssue"
-                :readonly="selectedIssue.status === 'closed'"
-                :available-issues="availableIssuesForDeps"
-                @navigate-to-issue="handleNavigateToIssue"
-                @attach-image="handleAttachImage"
-                @detach-image="confirmDetachImage"
-                @create-child="handleCreateChild"
-                @open-add-blocker="openAddBlockerDialog"
-                @remove-dependency="confirmRemoveDependency"
-                @open-add-relation="openAddRelationDialog"
-                @remove-relation="confirmRemoveRelation"
-              />
-              <CommentSection
-                class="mt-3"
-                :comments="selectedIssue.comments || []"
-                :readonly="selectedIssue.status === 'closed'"
-                @add-comment="handleAddComment"
-              />
-            </div>
-
-            <div v-else class="text-center text-muted-foreground py-8">
-              Select an issue to view details
-            </div>
-          </div>
-        </ScrollArea>
-      </div>
-      </div>
     </div>
 
     <!-- Debug Panel (above footer) -->
