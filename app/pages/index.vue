@@ -2,13 +2,12 @@
 import type { Issue, UpdateIssuePayload } from '~/types/issue'
 
 // Layout components
+import AppSidebar from '~/components/AppSidebar.vue'
 import DebugPanel from '~/components/layout/DebugPanel.vue'
 import DialogsLayer from '~/components/layout/DialogsLayer.vue'
 
 // Dashboard components
-import PathSelector from '~/components/dashboard/PathSelector.vue'
 import FolderPicker from '~/components/dashboard/FolderPicker.vue'
-import OnboardingCard from '~/components/dashboard/OnboardingCard.vue'
 import PrerequisitesCard from '~/components/dashboard/PrerequisitesCard.vue'
 
 
@@ -26,6 +25,13 @@ import IssuesBoardView from '~/components/issues/IssuesBoardView.vue'
 
 // UI components
 import { Button } from '~/components/ui/button'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '~/components/ui/breadcrumb'
 import { ScrollArea } from '~/components/ui/scroll-area'
 import { ConfirmDialog } from '~/components/ui/confirm-dialog'
 import {
@@ -36,12 +42,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
+import { Separator } from '~/components/ui/separator'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '~/components/ui/tooltip'
-import IssuesSidebarNav from '~/components/layout/IssuesSidebarNav.vue'
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '~/components/ui/sidebar'
 import { openUrl } from '~/utils/open-url'
 
 // Composables
@@ -91,6 +97,24 @@ const { isLeftSidebarOpen, isRightSidebarOpen, leftSidebarWidth, rightSidebarWid
 
 type IssuesView = 'table' | 'list' | 'board' | 'stats'
 const activeIssuesView = useProjectStorage<IssuesView>('activeIssuesView', 'table')
+const issuesViewMeta: Record<IssuesView, { label: string, description: string }> = {
+  table: {
+    label: 'Table',
+    description: 'Browse and filter the full issue grid.',
+  },
+  list: {
+    label: 'List',
+    description: 'Focus on ready work, pinned issues, and active tasks.',
+  },
+  board: {
+    label: 'Board',
+    description: 'Plan work across lanes with the new sidebar-driven shell.',
+  },
+  stats: {
+    label: 'Stats',
+    description: 'Track project health and status distribution.',
+  },
+}
 
 // Close right sidebar on init if no issue selected
 if (import.meta.client && !selectedIssue.value) {
@@ -129,21 +153,19 @@ const showOnboarding = computed(() => {
   return projects.value.length === 0 && !hasStoredPath.value
 })
 
-// Ref to PathSelector to open folder picker
-const pathSelectorRef = ref<InstanceType<typeof PathSelector> | null>(null)
+const appSidebarRef = ref<InstanceType<typeof AppSidebar> | null>(null)
 
 // Onboarding folder picker state
 const isOnboardingPickerOpen = ref(false)
 const { setPath } = useBeadsPath()
 
 const openFolderPicker = () => {
-  // Try PathSelector refs first, fallback to onboarding picker
-  const ref = pathSelectorRef.value
-  if (ref) {
-    ref.isPickerOpen = true
-  } else {
-    isOnboardingPickerOpen.value = true
+  if (!showOnboarding.value) {
+    appSidebarRef.value?.openProjectPicker?.()
+    return
   }
+
+  isOnboardingPickerOpen.value = true
 }
 
 const openProjectGithub = () => {
@@ -718,6 +740,25 @@ const handleIssuesViewSelect = (view: IssuesView) => {
   activeIssuesView.value = view
 }
 
+const activeViewMeta = computed(() => issuesViewMeta[activeIssuesView.value])
+
+const headerTitle = computed(() => {
+  if (isCreatingNew.value) return 'New issue'
+  if (isEditMode.value) return selectedIssue.value?.id ? `Editing ${selectedIssue.value.id}` : 'Editing issue'
+  return activeViewMeta.value.label
+})
+
+const headerSubtitle = computed(() => {
+  if (isCreatingNew.value) return 'Capture the work without leaving the new sidebar shell.'
+  if (isEditMode.value) return 'Update issue details while keeping the surrounding context close.'
+  return activeViewMeta.value.description
+})
+
+const sidebarProviderStyle = computed<Record<string, string>>(() => ({
+  '--sidebar-width': `${leftSidebarWidth.value}px`,
+  '--sidebar-width-icon': '3.5rem',
+}))
+
 // Watch filters to refetch issues (only when no active search)
 // Serialize values to avoid false triggers from deep watch when only search changes
 watch(
@@ -732,406 +773,74 @@ watch(
 </script>
 
 <template>
-  <div class="fixed inset-0 flex flex-col bg-background">
-    <!-- Main content container -->
-    <div id="zoomable-content" class="flex-1 min-h-0 overflow-hidden">
-      <div class="flex h-full overflow-hidden">
-        <!-- Left Sidebar - Dashboard (hidden in edit mode) -->
-        <aside
-          v-show="!(isEditMode || isCreatingNew)"
-          class="border-r border-border bg-card flex flex-col relative"
-          :class="{ 'transition-all duration-300': !isResizing }"
-          :style="isLeftSidebarOpen ? { width: `${leftSidebarWidth}px` } : { width: '48px' }"
-        >
-        <!-- Resize handle -->
-        <div
-          v-if="isLeftSidebarOpen"
-          class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 transition-colors z-10"
-          @mousedown="startResizeLeft"
-        />
-        <!-- Sidebar toggle -->
-        <div class="p-2 border-b border-border flex items-center" :class="isLeftSidebarOpen ? 'justify-between' : 'justify-center'">
-          <span v-if="isLeftSidebarOpen" class="text-sm font-medium px-2">Navigation</span>
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="h-8 w-8"
-                @click="isLeftSidebarOpen = !isLeftSidebarOpen"
-              >
-                <svg
-                  class="w-4 h-4 transition-transform"
-                  :class="{ 'rotate-180': !isLeftSidebarOpen }"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{{ isLeftSidebarOpen ? 'Close navigation' : 'Open navigation' }}</TooltipContent>
-          </Tooltip>
+  <SidebarProvider
+    :open="isLeftSidebarOpen"
+    class="fixed inset-0"
+    :style="sidebarProviderStyle"
+    @update:open="isLeftSidebarOpen = $event"
+  >
+    <AppSidebar
+      v-if="!(isEditMode || isCreatingNew)"
+      ref="appSidebarRef"
+      :active-view="activeIssuesView"
+      :show-onboarding="showOnboarding"
+      :is-loading="isLoading"
+      :project-name="currentProjectName"
+      :current-theme="currentTheme"
+      :show-debug-panel="showDebugPanel"
+      :probe-enabled="probeEnabled"
+      :is-dev="isDev"
+      @browse="openFolderPicker"
+      @change="handlePathChange"
+      @reset="handleReset"
+      @select-view="handleIssuesViewSelect"
+      @refresh="handleRefresh"
+      @cycle-theme="cycleTheme"
+      @toggle-debug="showDebugPanel = !showDebugPanel"
+      @open-settings="showSettingsDialog = true"
+      @open-github="openProjectGithub"
+      @resize-start="startResizeLeft"
+    />
+
+    <SidebarInset class="min-w-0 bg-muted/30">
+      <header class="flex h-16 shrink-0 items-center gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur">
+        <template v-if="!(isEditMode || isCreatingNew)">
+          <SidebarTrigger class="-ml-1" />
+          <Separator orientation="vertical" class="mr-1 h-4" />
+        </template>
+
+        <div class="min-w-0">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem class="hidden md:block">
+                <span class="truncate text-muted-foreground">{{ currentProjectName || 'Beads Task-Issue Tracker' }}</span>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator class="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{{ headerTitle }}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <p class="truncate text-xs text-muted-foreground">
+            {{ headerSubtitle }}
+          </p>
         </div>
 
-        <!-- Sidebar content -->
-        <div v-if="isLeftSidebarOpen" class="flex-1 flex flex-col overflow-hidden">
-          <!-- Top section (fixed content) -->
-          <div class="p-4 space-y-4 shrink-0">
-            <PathSelector v-if="!showOnboarding" ref="pathSelectorRef" :is-loading="isLoading" @change="handlePathChange" @reset="handleReset" />
-
-            <IssuesSidebarNav
-              v-if="!showOnboarding"
-              :active-view="activeIssuesView"
-              class="mt-2"
-              @select="handleIssuesViewSelect"
-            />
-
-            <div v-if="showOnboarding" class="flex items-center justify-center py-8">
-              <OnboardingCard v-if="showOnboarding" @browse="openFolderPicker" />
-            </div>
-            <div v-else-if="!stats" class="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-              Loading navigation...
-            </div>
-          </div>
-
-          <div class="mt-auto border-t border-border p-3">
-            <div class="flex flex-wrap items-center gap-2">
-              <Tooltip v-if="!showOnboarding">
-                <TooltipTrigger as-child>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-9 w-9 shrink-0"
-                    @click="handleRefresh"
-                  >
-                    <svg
-                      class="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                      <path d="M21 3v5h-5" />
-                    </svg>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Refresh</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-9 w-9 shrink-0"
-                    @click="cycleTheme"
-                  >
-                    <svg
-                      v-if="currentTheme.icon === 'sun'"
-                      class="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <circle cx="12" cy="12" r="5" />
-                      <line x1="12" y1="1" x2="12" y2="3" />
-                      <line x1="12" y1="21" x2="12" y2="23" />
-                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                      <line x1="1" y1="12" x2="3" y2="12" />
-                      <line x1="21" y1="12" x2="23" y2="12" />
-                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                    </svg>
-                    <svg
-                      v-else-if="currentTheme.icon === 'moon'"
-                      class="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                    </svg>
-                    <svg
-                      v-else-if="currentTheme.icon === 'square'"
-                      class="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                    </svg>
-                    <svg
-                      v-else
-                      class="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z" />
-                    </svg>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{{ currentTheme.label }}</TooltipContent>
-              </Tooltip>
-
-              <div class="h-5 w-px bg-border mx-1" />
-
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-9 w-9 shrink-0"
-                    :class="showDebugPanel ? 'text-foreground' : ''"
-                    @click="showDebugPanel = !showDebugPanel"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                      <path d="m8 2 1.88 1.88" /><path d="M14.12 3.88 16 2" />
-                      <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1" />
-                      <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" />
-                      <path d="M12 20v-9" /><path d="M6.53 9C4.6 8.8 3 7.1 3 5" />
-                      <path d="M6 13H2" /><path d="M3 21c0-2.1 1.7-3.9 3.8-4" />
-                      <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4" /><path d="M22 13h-4" />
-                      <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4" />
-                    </svg>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Toggle Debug Panel (⌘⇧L)</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-9 w-9 shrink-0"
-                    @click="showSettingsDialog = true"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Settings (⌘,)</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-9 w-9 shrink-0"
-                    @click="openProjectGithub"
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
-                      <path d="M12 .5C5.65.5.5 5.65.5 12A11.5 11.5 0 0 0 8.36 22.9c.58.11.79-.25.79-.56v-2.17c-3.2.7-3.88-1.35-3.88-1.35-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.78 1.2 1.78 1.2 1.03 1.76 2.7 1.25 3.36.95.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.67 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.9 10.9 0 0 1 5.74 0c2.18-1.48 3.14-1.17 3.14-1.17.62 1.58.23 2.75.12 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.68 5.38-5.24 5.66.41.35.78 1.04.78 2.1v3.11c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
-                    </svg>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Open GitHub repository</TooltipContent>
-              </Tooltip>
-
-              <span
-                v-if="probeEnabled && isDev"
-                class="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-green-500"
-                title="Probe broadcasting enabled"
-              >
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
-                  <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
-                  <circle cx="12" cy="12" r="2" fill="currentColor" />
-                  <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
-                  <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1" />
-                </svg>
-                <span>Probe</span>
-              </span>
-            </div>
-          </div>
+        <div v-if="!showOnboarding" class="ml-auto hidden items-center gap-3 text-xs text-muted-foreground md:flex">
+          <span>{{ filteredIssues.length }} issue{{ filteredIssues.length === 1 ? '' : 's' }}</span>
+          <span v-if="selectedIssue" class="rounded-full border border-border px-2 py-1 font-medium text-foreground">
+            {{ selectedIssue.id }}
+          </span>
         </div>
+      </header>
 
-        <!-- Collapsed state icon -->
-        <div v-else class="flex-1 flex flex-col items-center pt-4 gap-4">
-          <svg class="w-5 h-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="9" y1="9" x2="15" y2="9" />
-            <line x1="9" y1="13" x2="15" y2="13" />
-            <line x1="9" y1="17" x2="11" y2="17" />
-          </svg>
-
-          <div class="mt-auto flex flex-col items-center gap-2 pb-3">
-            <Tooltip v-if="!showOnboarding">
-              <TooltipTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  @click="handleRefresh"
-                >
-                  <svg
-                    class="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                    <path d="M21 3v5h-5" />
-                  </svg>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Refresh</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  @click="cycleTheme"
-                >
-                  <svg
-                    v-if="currentTheme.icon === 'sun'"
-                    class="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <circle cx="12" cy="12" r="5" />
-                    <line x1="12" y1="1" x2="12" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="23" />
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                    <line x1="1" y1="12" x2="3" y2="12" />
-                    <line x1="21" y1="12" x2="23" y2="12" />
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                  </svg>
-                  <svg
-                    v-else-if="currentTheme.icon === 'moon'"
-                    class="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                  </svg>
-                  <svg
-                    v-else-if="currentTheme.icon === 'square'"
-                    class="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                  </svg>
-                  <svg
-                    v-else
-                    class="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z" />
-                  </svg>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{{ currentTheme.label }}</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :class="showDebugPanel ? 'text-foreground' : ''"
-                  @click="showDebugPanel = !showDebugPanel"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                    <path d="m8 2 1.88 1.88" /><path d="M14.12 3.88 16 2" />
-                    <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1" />
-                    <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" />
-                    <path d="M12 20v-9" /><path d="M6.53 9C4.6 8.8 3 7.1 3 5" />
-                    <path d="M6 13H2" /><path d="M3 21c0-2.1 1.7-3.9 3.8-4" />
-                    <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4" /><path d="M22 13h-4" />
-                    <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4" />
-                  </svg>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Toggle Debug Panel (⌘⇧L)</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  @click="showSettingsDialog = true"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Settings (⌘,)</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  @click="openProjectGithub"
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
-                    <path d="M12 .5C5.65.5.5 5.65.5 12A11.5 11.5 0 0 0 8.36 22.9c.58.11.79-.25.79-.56v-2.17c-3.2.7-3.88-1.35-3.88-1.35-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.78 1.2 1.78 1.2 1.03 1.76 2.7 1.25 3.36.95.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.67 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.9 10.9 0 0 1 5.74 0c2.18-1.48 3.14-1.17 3.14-1.17.62 1.58.23 2.75.12 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.68 5.38-5.24 5.66.41.35.78 1.04.78 2.1v3.11c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
-                  </svg>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Open GitHub repository</TooltipContent>
-            </Tooltip>
-
-            <Tooltip v-if="probeEnabled && isDev">
-              <TooltipTrigger as-child>
-                <span class="inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
-              </TooltipTrigger>
-              <TooltipContent>Probe broadcasting enabled</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Center - Issues List -->
-      <main
-        v-show="!(isEditMode || isCreatingNew)"
-        class="flex-1 flex flex-col overflow-hidden min-w-0"
-      >
+      <div id="zoomable-content" class="flex-1 min-h-0 overflow-hidden p-3 pt-0">
+        <div class="flex h-full overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
+          <!-- Center - Issues List -->
+          <main
+            v-show="!(isEditMode || isCreatingNew)"
+            class="flex-1 flex flex-col overflow-hidden min-w-0"
+          >
         <!-- Onboarding: Prerequisites Card -->
         <PrerequisitesCard v-if="showOnboarding" @browse="openFolderPicker" />
 
@@ -1211,124 +920,126 @@ watch(
             Loading...
           </div>
         </template>
-      </main>
+          </main>
 
-      <!-- Right Sidebar - Details (hidden when no selection and not in edit mode) -->
-      <aside
-        v-if="selectedIssue || isEditMode || isCreatingNew"
-        class="bg-card flex flex-col relative overflow-hidden"
-        :class="[
-          { 'transition-all duration-300': !isResizing && !(isEditMode || isCreatingNew) },
-          { 'border-l border-border': !(isEditMode || isCreatingNew) },
-          { 'w-full lg:w-1/2 lg:min-w-2xl mx-auto my-4 border border-border rounded-lg': isEditMode || isCreatingNew }
-        ]"
-        :style="(isEditMode || isCreatingNew) ? {} : (isRightSidebarOpen ? { width: `${rightSidebarWidth}px` } : { width: '48px' })"
-      >
-        <!-- Resize handle -->
-        <div
-          v-if="isRightSidebarOpen && !(isEditMode || isCreatingNew)"
-          class="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 transition-colors z-10"
-          @mousedown="startResizeRight"
-        />
-        <!-- Sidebar toggle -->
-        <div
-          v-show="!(isEditMode || isCreatingNew)"
-          class="p-2 border-b border-border flex items-center"
-          :class="isRightSidebarOpen ? 'justify-between' : 'justify-center'"
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            class="h-8 w-8"
-            @click="isRightSidebarOpen = !isRightSidebarOpen"
+          <!-- Right Sidebar - Details (hidden when no selection and not in edit mode) -->
+          <aside
+            v-if="selectedIssue || isEditMode || isCreatingNew"
+            class="bg-card flex flex-col relative overflow-hidden"
+            :class="[
+              { 'transition-all duration-300': !isResizing && !(isEditMode || isCreatingNew) },
+              { 'border-l border-border': !(isEditMode || isCreatingNew) },
+              { 'w-full lg:w-1/2 lg:min-w-2xl mx-auto my-4 border border-border rounded-lg': isEditMode || isCreatingNew }
+            ]"
+            :style="(isEditMode || isCreatingNew) ? {} : (isRightSidebarOpen ? { width: `${rightSidebarWidth}px` } : { width: '48px' })"
           >
-            <svg
-              class="w-4 h-4 transition-transform"
-              :class="{ 'rotate-180': isRightSidebarOpen }"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
+        <!-- Resize handle -->
+            <div
+              v-if="isRightSidebarOpen && !(isEditMode || isCreatingNew)"
+              class="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 transition-colors z-10"
+              @mousedown="startResizeRight"
+            />
+        <!-- Sidebar toggle -->
+            <div
+              v-show="!(isEditMode || isCreatingNew)"
+              class="p-2 border-b border-border flex items-center"
+              :class="isRightSidebarOpen ? 'justify-between' : 'justify-center'"
             >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </Button>
-          <span v-if="isRightSidebarOpen" class="text-sm font-medium px-2">Details</span>
-        </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="h-8 w-8"
+                @click="isRightSidebarOpen = !isRightSidebarOpen"
+              >
+                <svg
+                  class="w-4 h-4 transition-transform"
+                  :class="{ 'rotate-180': isRightSidebarOpen }"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </Button>
+              <span v-if="isRightSidebarOpen" class="text-sm font-medium px-2">Details</span>
+            </div>
 
         <!-- Sidebar content -->
-        <template v-if="isRightSidebarOpen">
+            <template v-if="isRightSidebarOpen">
           <!-- Fixed header for issue preview -->
-          <IssueDetailHeader
-            v-if="selectedIssue && !isEditMode && !isCreatingNew"
-            :selected-issue="selectedIssue"
-            :is-pinned="isPinned(selectedIssue.id)"
-            @edit="handleEditIssue"
-            @reopen="handleReopenIssue"
-            @close="handleCloseIssue"
-            @delete="handleDeleteIssue"
-            @toggle-pin="togglePin(selectedIssue.id)"
-          />
+              <IssueDetailHeader
+                v-if="selectedIssue && !isEditMode && !isCreatingNew"
+                :selected-issue="selectedIssue"
+                :is-pinned="isPinned(selectedIssue.id)"
+                @edit="handleEditIssue"
+                @reopen="handleReopenIssue"
+                @close="handleCloseIssue"
+                @delete="handleDeleteIssue"
+                @toggle-pin="togglePin(selectedIssue.id)"
+              />
 
           <!-- Form mode: form gère son propre scroll -->
-          <div v-if="isEditMode || isCreatingNew" class="flex-1 min-h-0 p-4 overflow-hidden">
-            <IssueForm
-              :issue="isCreatingNew ? null : selectedIssue"
-              :is-new="isCreatingNew"
-              :is-saving="isUpdating"
-              :available-epics="availableEpics"
-              :available-labels="availableLabels"
-              :default-parent="defaultParent"
-              :dot-notation-parent="bdDotNotationParent"
-              @save="handleSaveIssue"
-              @cancel="handleCancelEdit"
-            />
-          </div>
+              <div v-if="isEditMode || isCreatingNew" class="flex-1 min-h-0 p-4 overflow-hidden">
+                <IssueForm
+                  :issue="isCreatingNew ? null : selectedIssue"
+                  :is-new="isCreatingNew"
+                  :is-saving="isUpdating"
+                  :available-epics="availableEpics"
+                  :available-labels="availableLabels"
+                  :default-parent="defaultParent"
+                  :dot-notation-parent="bdDotNotationParent"
+                  @save="handleSaveIssue"
+                  @cancel="handleCancelEdit"
+                />
+              </div>
 
           <!-- Preview mode: ScrollArea pour le contenu -->
-          <ScrollArea v-else class="flex-1 min-h-0">
-            <div class="p-4">
-              <div v-if="selectedIssue">
-                <IssuePreview
-                  :issue="selectedIssue"
-                  :readonly="selectedIssue.status === 'closed'"
-                  :available-issues="availableIssuesForDeps"
-                  @navigate-to-issue="handleNavigateToIssue"
-                  @attach-image="handleAttachImage"
-                  @detach-image="confirmDetachImage"
-                  @create-child="handleCreateChild"
-                  @open-add-blocker="openAddBlockerDialog"
-                  @remove-dependency="confirmRemoveDependency"
-                  @open-add-relation="openAddRelationDialog"
-                  @remove-relation="confirmRemoveRelation"
-                />
-                <CommentSection
-                  class="mt-3"
-                  :comments="selectedIssue.comments || []"
-                  :readonly="selectedIssue.status === 'closed'"
-                  @add-comment="handleAddComment"
-                />
-              </div>
+              <ScrollArea v-else class="flex-1 min-h-0">
+                <div class="p-4">
+                  <div v-if="selectedIssue">
+                    <IssuePreview
+                      :issue="selectedIssue"
+                      :readonly="selectedIssue.status === 'closed'"
+                      :available-issues="availableIssuesForDeps"
+                      @navigate-to-issue="handleNavigateToIssue"
+                      @attach-image="handleAttachImage"
+                      @detach-image="confirmDetachImage"
+                      @create-child="handleCreateChild"
+                      @open-add-blocker="openAddBlockerDialog"
+                      @remove-dependency="confirmRemoveDependency"
+                      @open-add-relation="openAddRelationDialog"
+                      @remove-relation="confirmRemoveRelation"
+                    />
+                    <CommentSection
+                      class="mt-3"
+                      :comments="selectedIssue.comments || []"
+                      :readonly="selectedIssue.status === 'closed'"
+                      @add-comment="handleAddComment"
+                    />
+                  </div>
 
-              <div v-else class="text-center text-muted-foreground py-8">
-                Select an issue to view details
-              </div>
+                  <div v-else class="text-center text-muted-foreground py-8">
+                    Select an issue to view details
+                  </div>
+                </div>
+              </ScrollArea>
+            </template>
+
+            <!-- Collapsed state icon -->
+            <div v-else class="flex-1 flex flex-col items-center pt-4 gap-4">
+              <svg class="w-5 h-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
             </div>
-          </ScrollArea>
-        </template>
-
-        <!-- Collapsed state icon -->
-        <div v-else class="flex-1 flex flex-col items-center pt-4 gap-4">
-          <svg class="w-5 h-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-          </svg>
+          </aside>
         </div>
-        </aside>
       </div>
-    </div>
+    </SidebarInset>
+  </SidebarProvider>
 
     <!-- Debug Panel -->
     <DebugPanel v-model:is-open="showDebugPanel" />
@@ -1504,5 +1215,4 @@ watch(
       </DialogContent>
     </Dialog>
 
-  </div>
 </template>
