@@ -3,7 +3,6 @@ import type { Issue, UpdateIssuePayload } from '~/types/issue'
 
 // Layout components
 import AppHeader from '~/components/layout/AppHeader.vue'
-import UpdateIndicator from '~/components/layout/UpdateIndicator.vue'
 import DebugPanel from '~/components/layout/DebugPanel.vue'
 import DialogsLayer from '~/components/layout/DialogsLayer.vue'
 
@@ -44,6 +43,7 @@ import {
   TooltipTrigger,
 } from '~/components/ui/tooltip'
 import IssuesSidebarNav from '~/components/layout/IssuesSidebarNav.vue'
+import { openUrl } from '~/utils/open-url'
 
 // Composables
 const { filters, toggleStatus, toggleType, togglePriority, toggleAssignee, clearFilters, setStatusFilter, setSearch, toggleLabelFilter } = useFilters()
@@ -150,6 +150,10 @@ const openFolderPicker = () => {
   } else {
     isOnboardingPickerOpen.value = true
   }
+}
+
+const openProjectGithub = () => {
+  openUrl('https://github.com/w3dev33/beads-task-issue-tracker')
 }
 
 const handleOnboardingFolderSelect = async (path: string) => {
@@ -826,7 +830,7 @@ watch(
           </div>
 
           <div class="mt-auto border-t border-border p-3">
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <Tooltip v-if="!showOnboarding">
                 <TooltipTrigger as-child>
                   <Button
@@ -914,6 +918,79 @@ watch(
                 </TooltipTrigger>
                 <TooltipContent>{{ currentTheme.label }}</TooltipContent>
               </Tooltip>
+
+              <div class="h-5 w-px bg-border mx-1" />
+
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-9 w-9 shrink-0"
+                    :class="showDebugPanel ? 'text-foreground' : ''"
+                    @click="showDebugPanel = !showDebugPanel"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                      <path d="m8 2 1.88 1.88" /><path d="M14.12 3.88 16 2" />
+                      <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1" />
+                      <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" />
+                      <path d="M12 20v-9" /><path d="M6.53 9C4.6 8.8 3 7.1 3 5" />
+                      <path d="M6 13H2" /><path d="M3 21c0-2.1 1.7-3.9 3.8-4" />
+                      <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4" /><path d="M22 13h-4" />
+                      <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4" />
+                    </svg>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Toggle Debug Panel (⌘⇧L)</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-9 w-9 shrink-0"
+                    @click="showSettingsDialog = true"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Settings (⌘,)</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-9 w-9 shrink-0"
+                    @click="openProjectGithub"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                      <path d="M12 .5C5.65.5.5 5.65.5 12A11.5 11.5 0 0 0 8.36 22.9c.58.11.79-.25.79-.56v-2.17c-3.2.7-3.88-1.35-3.88-1.35-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.78 1.2 1.78 1.2 1.03 1.76 2.7 1.25 3.36.95.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.67 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.9 10.9 0 0 1 5.74 0c2.18-1.48 3.14-1.17 3.14-1.17.62 1.58.23 2.75.12 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.68 5.38-5.24 5.66.41.35.78 1.04.78 2.1v3.11c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+                    </svg>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Open GitHub repository</TooltipContent>
+              </Tooltip>
+
+              <span
+                v-if="probeEnabled && isDev"
+                class="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-green-500"
+                title="Probe broadcasting enabled"
+              >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+                  <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
+                  <circle cx="12" cy="12" r="2" fill="currentColor" />
+                  <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
+                  <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1" />
+                </svg>
+                <span>Probe</span>
+              </span>
             </div>
           </div>
         </div>
@@ -1014,6 +1091,69 @@ watch(
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{{ currentTheme.label }}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :class="showDebugPanel ? 'text-foreground' : ''"
+                  @click="showDebugPanel = !showDebugPanel"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                    <path d="m8 2 1.88 1.88" /><path d="M14.12 3.88 16 2" />
+                    <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1" />
+                    <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" />
+                    <path d="M12 20v-9" /><path d="M6.53 9C4.6 8.8 3 7.1 3 5" />
+                    <path d="M6 13H2" /><path d="M3 21c0-2.1 1.7-3.9 3.8-4" />
+                    <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4" /><path d="M22 13h-4" />
+                    <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Toggle Debug Panel (⌘⇧L)</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  @click="showSettingsDialog = true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Settings (⌘,)</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  @click="openProjectGithub"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                    <path d="M12 .5C5.65.5.5 5.65.5 12A11.5 11.5 0 0 0 8.36 22.9c.58.11.79-.25.79-.56v-2.17c-3.2.7-3.88-1.35-3.88-1.35-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.78 1.2 1.78 1.2 1.03 1.76 2.7 1.25 3.36.95.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.67 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.9 10.9 0 0 1 5.74 0c2.18-1.48 3.14-1.17 3.14-1.17.62 1.58.23 2.75.12 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.68 5.38-5.24 5.66.41.35.78 1.04.78 2.1v3.11c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Open GitHub repository</TooltipContent>
+            </Tooltip>
+
+            <Tooltip v-if="probeEnabled && isDev">
+              <TooltipTrigger as-child>
+                <span class="inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+              </TooltipTrigger>
+              <TooltipContent>Probe broadcasting enabled</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -1222,65 +1362,8 @@ watch(
     </div>
     </div>
 
-    <!-- Debug Panel (above footer) -->
+    <!-- Debug Panel -->
     <DebugPanel v-model:is-open="showDebugPanel" />
-
-    <!-- Footer (outside zoomable content) -->
-    <footer class="px-4 py-2 border-t border-border bg-card flex items-center justify-between text-xs text-muted-foreground font-mono">
-      <div class="flex items-center gap-2">
-        <!-- Debug panel toggle -->
-        <button
-          class="flex items-center gap-1.5 hover:text-foreground transition-colors"
-          :class="showDebugPanel ? 'text-foreground' : ''"
-          title="Toggle Debug Panel (⌘⇧L)"
-          @click="showDebugPanel = !showDebugPanel"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m8 2 1.88 1.88" /><path d="M14.12 3.88 16 2" />
-            <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1" />
-            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" />
-            <path d="M12 20v-9" /><path d="M6.53 9C4.6 8.8 3 7.1 3 5" />
-            <path d="M6 13H2" /><path d="M3 21c0-2.1 1.7-3.9 3.8-4" />
-            <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4" /><path d="M22 13h-4" />
-            <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4" />
-          </svg>
-        </button>
-
-        <!-- Settings -->
-        <button
-          class="flex items-center hover:text-foreground transition-colors"
-          title="Settings (⌘,)"
-          @click="showSettingsDialog = true"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </button>
-
-        <!-- Probe enabled indicator (dev-only) -->
-        <span
-          v-if="probeEnabled && isDev"
-          class="flex items-center gap-1 text-green-500"
-          title="Probe broadcasting enabled"
-        >
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
-            <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
-            <circle cx="12" cy="12" r="2" fill="currentColor" />
-            <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
-            <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1" />
-          </svg>
-          <span class="uppercase text-[10px] font-semibold tracking-wider">Probe</span>
-        </span>
-      </div>
-
-      <!-- Center spacer -->
-      <div></div>
-
-      <!-- Version à droite -->
-      <UpdateIndicator />
-    </footer>
 
     <!-- Issue management dialogs + Image/Markdown Preview -->
     <DialogsLayer />
