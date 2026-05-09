@@ -10,8 +10,6 @@ import DialogsLayer from '~/components/layout/DialogsLayer.vue'
 // Dashboard components
 import PathSelector from '~/components/dashboard/PathSelector.vue'
 import FolderPicker from '~/components/dashboard/FolderPicker.vue'
-import KpiCard from '~/components/dashboard/KpiCard.vue'
-import DashboardContent from '~/components/dashboard/DashboardContent.vue'
 import OnboardingCard from '~/components/dashboard/OnboardingCard.vue'
 import PrerequisitesCard from '~/components/dashboard/PrerequisitesCard.vue'
 
@@ -24,6 +22,9 @@ import CommentSection from '~/components/details/CommentSection.vue'
 
 // Issues components
 import IssueListPanel from '~/components/issues/IssueListPanel.vue'
+import IssuesListView from '~/components/issues/IssuesListView.vue'
+import IssuesStatsView from '~/components/issues/IssuesStatsView.vue'
+import IssuesBoardView from '~/components/issues/IssuesBoardView.vue'
 
 // UI components
 import { Button } from '~/components/ui/button'
@@ -42,6 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '~/components/ui/tooltip'
+import IssuesSidebarNav from '~/components/layout/IssuesSidebarNav.vue'
 
 // Composables
 const { filters, toggleStatus, toggleType, togglePriority, toggleAssignee, clearFilters, setStatusFilter, setSearch, toggleLabelFilter } = useFilters()
@@ -86,6 +88,9 @@ const { needsMigration: needsRefsMigration, refCount: refsRefCount, isMigrating:
 
 // Sidebar resize
 const { isLeftSidebarOpen, isRightSidebarOpen, leftSidebarWidth, rightSidebarWidth, isResizing, startResizeLeft, startResizeRight } = useSidebarResize()
+
+type IssuesView = 'table' | 'list' | 'board' | 'stats'
+const activeIssuesView = useProjectStorage<IssuesView>('activeIssuesView', 'table')
 
 // Close right sidebar on init if no issue selected
 if (import.meta.client && !selectedIssue.value) {
@@ -728,6 +733,10 @@ const handleKpiClick = (kpi: KpiFilter) => {
   }
 }
 
+const handleIssuesViewSelect = (view: IssuesView) => {
+  activeIssuesView.value = view
+}
+
 // Watch filters to refetch issues (only when no active search)
 // Serialize values to avoid false triggers from deep watch when only search changes
 watch(
@@ -771,7 +780,7 @@ watch(
         />
         <!-- Sidebar toggle -->
         <div class="p-2 border-b border-border flex items-center" :class="isLeftSidebarOpen ? 'justify-between' : 'justify-center'">
-          <span v-if="isLeftSidebarOpen" class="text-sm font-medium px-2">Dashboard</span>
+          <span v-if="isLeftSidebarOpen" class="text-sm font-medium px-2">Navigation</span>
           <Tooltip>
             <TooltipTrigger as-child>
               <Button
@@ -792,7 +801,7 @@ watch(
                 </svg>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{{ isLeftSidebarOpen ? 'Close dashboard' : 'Open dashboard' }}</TooltipContent>
+            <TooltipContent>{{ isLeftSidebarOpen ? 'Close navigation' : 'Open navigation' }}</TooltipContent>
           </Tooltip>
         </div>
 
@@ -802,38 +811,19 @@ watch(
           <div class="p-4 space-y-4 shrink-0">
             <PathSelector v-if="!showOnboarding" ref="pathSelectorRef" :is-loading="isLoading" @change="handlePathChange" @reset="handleReset" />
 
-            <div v-if="stats" class="space-y-4 mt-6">
-              <div class="grid grid-cols-4 gap-1.5">
-                <KpiCard title="Total" :value="stats.total" :active="activeKpiFilter === null && filters.status.length === 0" @click="handleKpiClick('total')" />
-                <KpiCard title="Open" :value="stats.open" color="var(--color-status-open)" :active="activeKpiFilter === 'open'" @click="handleKpiClick('open')" />
-                <KpiCard title="In Progress" :value="stats.inProgress" color="var(--color-status-in-progress)" :active="activeKpiFilter === 'in_progress'" @click="handleKpiClick('in_progress')" />
-                <KpiCard title="Blocked" :value="stats.blocked" color="var(--color-status-blocked)" :active="activeKpiFilter === 'blocked'" @click="handleKpiClick('blocked')" />
-              </div>
-            </div>
-
-            <div v-if="!stats" class="flex items-center justify-center py-8">
-              <OnboardingCard v-if="showOnboarding" @browse="openFolderPicker" />
-              <span v-else class="text-muted-foreground text-sm">Loading...</span>
-            </div>
-          </div>
-
-          <!-- Scrollable section for Charts and Ready to Work -->
-          <div v-if="stats" class="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
-            <DashboardContent
-              hide-kpis
-              :stats="stats"
-              :ready-issues="readyIssues"
-              :in-progress-issues="inProgressIssues"
-              :pinned-issues="pinnedIssuesList"
-              :pinned-sort-mode="pinnedSortMode"
-              :active-kpi-filter="activeKpiFilter"
-              :status-filters="filters.status"
-              @select-issue="handleSelectIssue"
-              @kpi-click="handleKpiClick"
-              @reorder-pinned="reorderPinned"
-              @unpin="togglePin"
-              @toggle-pinned-sort="togglePinnedSort"
+            <IssuesSidebarNav
+              v-if="!showOnboarding"
+              :active-view="activeIssuesView"
+              class="mt-2"
+              @select="handleIssuesViewSelect"
             />
+
+            <div v-if="showOnboarding" class="flex items-center justify-center py-8">
+              <OnboardingCard v-if="showOnboarding" @browse="openFolderPicker" />
+            </div>
+            <div v-else-if="!stats" class="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+              Loading navigation...
+            </div>
           </div>
         </div>
 
@@ -859,6 +849,7 @@ watch(
         <!-- Normal: Issues Toolbar + Table -->
         <template v-else>
           <IssueListPanel
+            v-if="activeIssuesView === 'table'"
             v-model:search="searchValue"
             v-model:selected-ids="selectedIds"
             :filters="{ status: filters.status, type: filters.type, priority: filters.priority, labels: filters.labels, assignee: filters.assignee }"
@@ -898,7 +889,36 @@ watch(
             @toggle-pin="togglePin"
           />
 
-          <div v-if="isLoading" class="text-center text-muted-foreground py-4">
+          <IssuesListView
+            v-else-if="activeIssuesView === 'list'"
+            :ready-issues="readyIssues"
+            :in-progress-issues="inProgressIssues"
+            :pinned-issues="pinnedIssuesList"
+            :pinned-sort-mode="pinnedSortMode"
+            @select="handleSelectIssue"
+            @reorder-pinned="reorderPinned"
+            @unpin="togglePin"
+            @toggle-pinned-sort="togglePinnedSort"
+          />
+
+          <IssuesStatsView
+            v-else-if="activeIssuesView === 'stats' && stats"
+            :stats="stats"
+            :active-kpi-filter="activeKpiFilter"
+            :status-filters="filters.status"
+            @kpi-click="handleKpiClick"
+          />
+
+          <div
+            v-else-if="activeIssuesView === 'stats'"
+            class="flex flex-1 items-center justify-center text-sm text-muted-foreground"
+          >
+            Loading stats...
+          </div>
+
+          <IssuesBoardView v-else />
+
+          <div v-if="isLoading && activeIssuesView === 'table'" class="text-center text-muted-foreground py-4">
             Loading...
           </div>
         </template>
