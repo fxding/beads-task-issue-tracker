@@ -732,10 +732,10 @@ watch(
 </script>
 
 <template>
-  <div class="fixed inset-0 grid grid-rows-[1fr_auto] bg-background">
+  <div class="fixed inset-0 flex flex-col bg-background">
     <!-- Main content container -->
-    <div id="zoomable-content" class="h-full overflow-hidden">
-      <div class="flex overflow-hidden">
+    <div id="zoomable-content" class="flex-1 min-h-0 overflow-hidden">
+      <div class="flex h-full overflow-hidden">
         <!-- Left Sidebar - Dashboard (hidden in edit mode) -->
         <aside
           v-show="!(isEditMode || isCreatingNew)"
