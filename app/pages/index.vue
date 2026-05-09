@@ -2,7 +2,6 @@
 import type { Issue, UpdateIssuePayload } from '~/types/issue'
 
 // Layout components
-import AppHeader from '~/components/layout/AppHeader.vue'
 import DebugPanel from '~/components/layout/DebugPanel.vue'
 import DialogsLayer from '~/components/layout/DialogsLayer.vue'
 
@@ -112,7 +111,7 @@ watch(probeEnabled, async (enabled) => {
   }
 })
 
-// Current project name for header subtitle
+// Current project name for the native window title
 const currentProjectName = computed(() => {
   const project = projects.value.find(f => f.path === beadsPath.value)
   return project?.name
@@ -124,11 +123,6 @@ const { setWindowTitle } = useTauriWindow()
 watch(currentProjectName, (name) => {
   setWindowTitle(name ? `${name} — ${APP_TITLE}` : APP_TITLE)
 }, { immediate: true })
-
-// Whether the current project is exposed to the probe (read from PathSelector)
-const isCurrentProjectExposed = computed(() => {
-  return pathSelectorRef.value?.isCurrentExposed || false
-})
 
 // Show onboarding when no project is selected (no stored path and no projects)
 const showOnboarding = computed(() => {
@@ -161,24 +155,6 @@ const handleOnboardingFolderSelect = async (path: string) => {
   await fetchIssues()
   fetchStats(issues.value)
 }
-
-// Edit context for header
-const editContext = computed(() => {
-  if (isCreatingNew.value) {
-    return 'New issue'
-  }
-  if (isEditMode.value && selectedIssue.value) {
-    return 'Editing'
-  }
-  return undefined
-})
-
-const editId = computed(() => {
-  if (isEditMode.value && selectedIssue.value && !isCreatingNew.value) {
-    return selectedIssue.value.id
-  }
-  return undefined
-})
 
 // Sync status composable (for auto-sync indicator and error dialog)
 const { showErrorDialog: showSyncErrorDialog, lastSyncError, closeErrorDialog: closeSyncErrorDialog } = useSyncStatus()
@@ -758,23 +734,15 @@ watch(
 <template>
   <div class="fixed inset-0 grid grid-rows-[1fr_auto] bg-background">
     <!-- Main content container -->
-    <div id="zoomable-content" class="grid grid-rows-[auto_1fr] overflow-hidden">
-      <!-- Header -->
-      <AppHeader
-        :project-name="currentProjectName"
-        :edit-context="editContext"
-        :edit-id="editId"
-        :is-exposed="isCurrentProjectExposed"
-      />
-
-    <div class="flex overflow-hidden">
-      <!-- Left Sidebar - Dashboard (hidden in edit mode) -->
-      <aside
-        v-show="!(isEditMode || isCreatingNew)"
-        class="border-r border-border bg-card flex flex-col relative"
-        :class="{ 'transition-all duration-300': !isResizing }"
-        :style="isLeftSidebarOpen ? { width: `${leftSidebarWidth}px` } : { width: '48px' }"
-      >
+    <div id="zoomable-content" class="overflow-hidden">
+      <div class="flex overflow-hidden">
+        <!-- Left Sidebar - Dashboard (hidden in edit mode) -->
+        <aside
+          v-show="!(isEditMode || isCreatingNew)"
+          class="border-r border-border bg-card flex flex-col relative"
+          :class="{ 'transition-all duration-300': !isResizing }"
+          :style="isLeftSidebarOpen ? { width: `${leftSidebarWidth}px` } : { width: '48px' }"
+        >
         <!-- Resize handle -->
         <div
           v-if="isLeftSidebarOpen"
@@ -1358,8 +1326,8 @@ watch(
             <line x1="16" y1="17" x2="8" y2="17" />
           </svg>
         </div>
-      </aside>
-    </div>
+        </aside>
+      </div>
     </div>
 
     <!-- Debug Panel -->
