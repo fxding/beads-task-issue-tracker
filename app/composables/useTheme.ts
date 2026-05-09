@@ -1,17 +1,22 @@
 export interface ThemeDefinition {
   id: string
   label: string
-  icon: 'sun' | 'moon' | 'square' | 'zap'
+  icon: 'sun' | 'moon'
   baseMode: 'light' | 'dark'
   showBadgeIcons: boolean
 }
 
 const THEMES: ThemeDefinition[] = [
-  { id: 'light', label: 'Classic Light', icon: 'sun', baseMode: 'light', showBadgeIcons: false },
-  { id: 'dark', label: 'Classic Dark', icon: 'moon', baseMode: 'dark', showBadgeIcons: false },
-  { id: 'flat', label: 'Dark Flat', icon: 'square', baseMode: 'dark', showBadgeIcons: false },
-  { id: 'neon', label: 'Neon', icon: 'zap', baseMode: 'dark', showBadgeIcons: false },
+  { id: 'light', label: 'Light', icon: 'sun', baseMode: 'light', showBadgeIcons: false },
+  { id: 'dark', label: 'Dark', icon: 'moon', baseMode: 'dark', showBadgeIcons: false },
 ]
+
+const LEGACY_THEME_MIGRATIONS: Record<string, ThemeDefinition['id']> = {
+  flat: 'dark',
+  neon: 'dark',
+}
+
+const normalizeThemeId = (id: string) => LEGACY_THEME_MIGRATIONS[id] ?? id
 
 export function useTheme() {
   const theme = useLocalStorage('beads:theme', 'dark')
@@ -25,10 +30,12 @@ export function useTheme() {
     }
   }
 
+  theme.value = normalizeThemeId(theme.value)
+
   const themes = THEMES
 
   const currentTheme = computed((): ThemeDefinition => {
-    const found = THEMES.find(t => t.id === theme.value)
+    const found = THEMES.find(t => t.id === normalizeThemeId(theme.value))
     return found ?? THEMES[1]! // fallback to dark theme
   })
 
@@ -37,12 +44,12 @@ export function useTheme() {
   const showBadgeIcons = computed(() => currentTheme.value.showBadgeIcons)
 
   const setTheme = (id: string) => {
-    theme.value = id
+    theme.value = normalizeThemeId(id)
     updateHtmlClass()
   }
 
   const cycleTheme = () => {
-    const currentIndex = THEMES.findIndex(t => t.id === theme.value)
+    const currentIndex = THEMES.findIndex(t => t.id === normalizeThemeId(theme.value))
     const nextIndex = (currentIndex + 1) % THEMES.length
     setTheme(THEMES[nextIndex]!.id)
   }
@@ -50,7 +57,7 @@ export function useTheme() {
   const updateHtmlClass = () => {
     if (import.meta.client) {
       document.documentElement.classList.toggle('dark', isDark.value)
-      document.documentElement.setAttribute('data-theme', theme.value)
+      document.documentElement.setAttribute('data-theme', normalizeThemeId(theme.value))
     }
   }
 

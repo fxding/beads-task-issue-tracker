@@ -458,25 +458,25 @@ body {
 [data-theme="light"] .bg-priority-p3-gradient { background: var(--badge-priority-p3); }
 [data-theme="light"] .bg-priority-p4-gradient { background: var(--badge-priority-p4); }
 
-/* ── Dark Flat: solid color badges (no gradient) ────────────────────────────── */
-[data-theme="flat"] .bg-status-open-gradient { background: var(--badge-status-open); }
-[data-theme="flat"] .bg-status-in-progress-gradient { background: var(--badge-status-in-progress); }
-[data-theme="flat"] .bg-status-blocked-gradient { background: var(--badge-status-blocked); }
-[data-theme="flat"] .bg-status-closed-gradient { background: var(--badge-status-closed); }
-[data-theme="flat"] .bg-status-deferred-gradient { background: var(--badge-status-deferred); }
-[data-theme="flat"] .bg-status-tombstone-gradient { background: var(--badge-status-tombstone); }
-[data-theme="flat"] .bg-status-pinned-gradient { background: var(--badge-status-pinned); }
-[data-theme="flat"] .bg-status-hooked-gradient { background: var(--badge-status-hooked); }
-[data-theme="flat"] .bg-type-bug-gradient { background: var(--badge-type-bug); }
-[data-theme="flat"] .bg-type-task-gradient { background: var(--badge-type-task); }
-[data-theme="flat"] .bg-type-feature-gradient { background: var(--badge-type-feature); }
-[data-theme="flat"] .bg-type-epic-gradient { background: var(--badge-type-epic); }
-[data-theme="flat"] .bg-type-chore-gradient { background: var(--badge-type-chore); }
-[data-theme="flat"] .bg-priority-p0-gradient { background: var(--badge-priority-p0); }
-[data-theme="flat"] .bg-priority-p1-gradient { background: var(--badge-priority-p1); }
-[data-theme="flat"] .bg-priority-p2-gradient { background: var(--badge-priority-p2); }
-[data-theme="flat"] .bg-priority-p3-gradient { background: var(--badge-priority-p3); }
-[data-theme="flat"] .bg-priority-p4-gradient { background: var(--badge-priority-p4); }
+/* ── Dark: solid color badges (no gradient) ─────────────────────────────────── */
+[data-theme="dark"] .bg-status-open-gradient { background: var(--badge-status-open); }
+[data-theme="dark"] .bg-status-in-progress-gradient { background: var(--badge-status-in-progress); }
+[data-theme="dark"] .bg-status-blocked-gradient { background: var(--badge-status-blocked); }
+[data-theme="dark"] .bg-status-closed-gradient { background: var(--badge-status-closed); }
+[data-theme="dark"] .bg-status-deferred-gradient { background: var(--badge-status-deferred); }
+[data-theme="dark"] .bg-status-tombstone-gradient { background: var(--badge-status-tombstone); }
+[data-theme="dark"] .bg-status-pinned-gradient { background: var(--badge-status-pinned); }
+[data-theme="dark"] .bg-status-hooked-gradient { background: var(--badge-status-hooked); }
+[data-theme="dark"] .bg-type-bug-gradient { background: var(--badge-type-bug); }
+[data-theme="dark"] .bg-type-task-gradient { background: var(--badge-type-task); }
+[data-theme="dark"] .bg-type-feature-gradient { background: var(--badge-type-feature); }
+[data-theme="dark"] .bg-type-epic-gradient { background: var(--badge-type-epic); }
+[data-theme="dark"] .bg-type-chore-gradient { background: var(--badge-type-chore); }
+[data-theme="dark"] .bg-priority-p0-gradient { background: var(--badge-priority-p0); }
+[data-theme="dark"] .bg-priority-p1-gradient { background: var(--badge-priority-p1); }
+[data-theme="dark"] .bg-priority-p2-gradient { background: var(--badge-priority-p2); }
+[data-theme="dark"] .bg-priority-p3-gradient { background: var(--badge-priority-p3); }
+[data-theme="dark"] .bg-priority-p4-gradient { background: var(--badge-priority-p4); }
 
 
 /* ── Neon theme UI enhancements ─────────────────────────────────────────────── */
