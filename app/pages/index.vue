@@ -85,6 +85,7 @@ const { showDebugPanel, showSettingsDialog } = useAppMenu()
 const { needsRepair, affectedProject, isRepairing, repairError, repairProgress, repair: repairDatabase, repairAll, dismiss: dismissRepair } = useRepairDatabase()
 const { needsMigration, affectedProject: migrateAffectedProject, isMigrating, migrateError, migrate: migrateToDolt, checkProject: checkMigrationNeeded, dismiss: dismissMigration } = useMigrateToDolt()
 const { needsMigration: needsRefsMigration, refCount: refsRefCount, isMigrating: isRefsMigrating, migrateError: refsMigrateError, checkProject: checkRefsMigration, migrate: migrateRefs, dismiss: dismissRefsMigration } = useMigrateRefs()
+const { currentTheme, cycleTheme } = useTheme()
 
 // Sidebar resize
 const { isLeftSidebarOpen, isRightSidebarOpen, leftSidebarWidth, rightSidebarWidth, isResizing, startResizeLeft, startResizeRight } = useSidebarResize()
@@ -752,16 +753,14 @@ watch(
 
 <template>
   <div class="fixed inset-0 grid grid-rows-[1fr_auto] bg-background">
-    <!-- Zoomable content (header + panels) -->
+    <!-- Main content container -->
     <div id="zoomable-content" class="grid grid-rows-[auto_1fr] overflow-hidden">
       <!-- Header -->
       <AppHeader
         :project-name="currentProjectName"
         :edit-context="editContext"
         :edit-id="editId"
-        :show-refresh="!showOnboarding"
         :is-exposed="isCurrentProjectExposed"
-        @refresh="handleRefresh"
       />
 
     <div class="flex overflow-hidden">
@@ -825,6 +824,98 @@ watch(
               Loading navigation...
             </div>
           </div>
+
+          <div class="mt-auto border-t border-border p-3">
+            <div class="flex items-center gap-2">
+              <Tooltip v-if="!showOnboarding">
+                <TooltipTrigger as-child>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-9 w-9 shrink-0"
+                    @click="handleRefresh"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                      <path d="M21 3v5h-5" />
+                    </svg>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Refresh</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-9 w-9 shrink-0"
+                    @click="cycleTheme"
+                  >
+                    <svg
+                      v-if="currentTheme.icon === 'sun'"
+                      class="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="12" cy="12" r="5" />
+                      <line x1="12" y1="1" x2="12" y2="3" />
+                      <line x1="12" y1="21" x2="12" y2="23" />
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                      <line x1="1" y1="12" x2="3" y2="12" />
+                      <line x1="21" y1="12" x2="23" y2="12" />
+                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                    </svg>
+                    <svg
+                      v-else-if="currentTheme.icon === 'moon'"
+                      class="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                    <svg
+                      v-else-if="currentTheme.icon === 'square'"
+                      class="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                    </svg>
+                    <svg
+                      v-else
+                      class="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z" />
+                    </svg>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{{ currentTheme.label }}</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
         </div>
 
         <!-- Collapsed state icon -->
@@ -835,6 +926,96 @@ watch(
             <line x1="9" y1="13" x2="15" y2="13" />
             <line x1="9" y1="17" x2="11" y2="17" />
           </svg>
+
+          <div class="mt-auto flex flex-col items-center gap-2 pb-3">
+            <Tooltip v-if="!showOnboarding">
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  @click="handleRefresh"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  @click="cycleTheme"
+                >
+                  <svg
+                    v-if="currentTheme.icon === 'sun'"
+                    class="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                  </svg>
+                  <svg
+                    v-else-if="currentTheme.icon === 'moon'"
+                    class="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                  <svg
+                    v-else-if="currentTheme.icon === 'square'"
+                    class="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                  </svg>
+                  <svg
+                    v-else
+                    class="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{{ currentTheme.label }}</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </aside>
 

@@ -77,11 +77,10 @@ The app uses a **native file watcher** on the `.beads` directory. When an AI age
 - **Multi-Select**: Toggle multi-select mode to select issues individually or all at once
 - **Bulk Delete**: Delete multiple selected issues in one operation
 - **Sortable Columns**: Click any column header to sort (ascending, descending, or clear)
-- **Zoom Controls**: Adjust UI scale from 75% to 150% (Alt+Click to reset)
 
 ### Settings & Tools
 - **Dual CLI support**: Auto-detects [`br`](https://github.com/Dicklesworthstone/beads_rust) (Rust, recommended) and [`bd`](https://github.com/steveyegge/beads) (Go) — switch between them via Settings (`Cmd/Ctrl+,`), feature profiles adapt automatically
-- **Theme System**: 4 themes — Classic Light, Classic Dark, Dark Flat, and Neon — with per-theme badge styling, glow effects, and one-click cycling via the header icon
+- **Theme System**: 4 themes — Classic Light, Classic Dark, Dark Flat, and Neon — with per-theme badge styling, glow effects, and one-click cycling from the left sidebar
 - **Debug Panel**: Live log viewer with auto-refresh, accessible via `Cmd/Ctrl+Shift+L`
 - **Database Repair**: Automatic detection and repair of schema migration issues
 - **Keyboard Shortcuts**: `Cmd/Ctrl+,` (settings), `Cmd/Ctrl+F` (search in markdown), `Cmd/Ctrl+Shift+L` (debug logs), arrow keys (gallery navigation)

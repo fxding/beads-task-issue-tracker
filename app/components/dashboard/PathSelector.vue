@@ -25,34 +25,12 @@ const { projects, sortedProjects, sortMode, hasReordered, removeProject, reorder
 const projectsListRef = ref<HTMLElement | null>(null)
 let sortableInstance: Sortable | null = null
 
-// Apply counter-zoom on projects list before SortableJS calculates coordinates
-const resetZoomOnPointerDown = (e: PointerEvent) => {
-  const target = e.target as HTMLElement
-  if (!target.closest('.drag-handle') || !projectsListRef.value) return
-  const zoomableContent = document.getElementById('zoomable-content')
-  const parentZoom = parseFloat(zoomableContent?.style.zoom || '100')
-  if (parentZoom !== 100) {
-    projectsListRef.value.style.zoom = `${10000 / parentZoom}%`
-  }
-}
-
-const restoreZoom = () => {
-  if (projectsListRef.value) {
-    projectsListRef.value.style.zoom = ''
-  }
-}
-
 const initSortable = () => {
   if (sortableInstance) {
     sortableInstance.destroy()
     sortableInstance = null
   }
   if (!projectsListRef.value) return
-
-  // Listen on pointerdown to reset zoom before SortableJS kicks in
-  projectsListRef.value.addEventListener('pointerdown', resetZoomOnPointerDown)
-  // Restore zoom if user releases without dragging
-  projectsListRef.value.addEventListener('pointerup', restoreZoom)
 
   sortableInstance = Sortable.create(projectsListRef.value, {
     handle: '.drag-handle',
@@ -63,7 +41,6 @@ const initSortable = () => {
     fallbackOnBody: true,
     disabled: !!props.isLoading,
     onEnd: (evt) => {
-      restoreZoom()
       if (evt.oldIndex == null || evt.newIndex == null || evt.oldIndex === evt.newIndex) return
       // Read new order from DOM data attributes before reverting
       const container = evt.from
@@ -100,8 +77,6 @@ const isProjectsCollapsed = useLocalStorage('beads:favoritesCollapsed', false)
 
 onMounted(initSortable)
 onBeforeUnmount(() => {
-  projectsListRef.value?.removeEventListener('pointerdown', resetZoomOnPointerDown)
-  projectsListRef.value?.removeEventListener('pointerup', restoreZoom)
   sortableInstance?.destroy()
 })
 
