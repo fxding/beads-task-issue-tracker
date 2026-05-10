@@ -640,9 +640,6 @@ watch(
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <p class="truncate text-xs text-muted-foreground">
-            {{ activeViewMeta.description }}
-          </p>
         </div>
 
         <div v-if="!showOnboarding" class="ml-auto hidden items-center gap-3 text-xs text-muted-foreground md:flex">

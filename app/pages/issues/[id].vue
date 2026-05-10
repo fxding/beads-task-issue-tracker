@@ -303,13 +303,6 @@ onMounted(async () => {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <p class="truncate text-xs text-muted-foreground">
-            {{ isEditMode ? 'Editing this issue on its own page.' : 'Standalone issue details page.' }}
-          </p>
-        </div>
-
-        <div class="ml-auto hidden items-center gap-3 text-xs text-muted-foreground md:flex">
-          <span v-if="currentIssue">{{ currentIssue.title }}</span>
         </div>
       </header>
 
