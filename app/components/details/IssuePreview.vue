@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
 import type { Issue } from '~/types/issue'
-import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { LinkifiedText } from '~/components/ui/linkified-text'
-import LabelBadge from '~/components/issues/LabelBadge.vue'
 import StatusBadge from '~/components/issues/StatusBadge.vue'
 import PriorityBadge from '~/components/issues/PriorityBadge.vue'
-import { extractNonImageRefs, isUrl } from '~/utils/markdown'
+import { extractNonImageRefs } from '~/utils/markdown'
 
 const props = defineProps<{
   issue: Issue
@@ -27,8 +25,6 @@ const emit = defineEmits<{
   'create-child': [parentId: string]
   'open-add-blocker': [issueId: string]
   'remove-dependency': [issueId: string, blockerId: string]
-  'open-add-relation': [issueId: string]
-  'remove-relation': [sourceId: string, targetId: string]
 }>()
 
 // Natural sort comparison for IDs (handles multi-digit numbers correctly)
@@ -106,24 +102,12 @@ const handleRemoveDependency = (id: string, section: 'blockedBy' | 'blocks') => 
   }
 }
 
-const handleRemoveRelation = (targetId: string, direction: string) => {
-  if (direction === 'dependent') {
-    // targetId depends on current issue → bd dep remove <targetId> <currentIssue>
-    emit('remove-relation', targetId, props.issue.id)
-  } else {
-    // Current issue depends on targetId → bd dep remove <currentIssue> <targetId>
-    emit('remove-relation', props.issue.id, targetId)
-  }
-}
-
 // Collapsible section states (persisted per project, all open by default)
 interface PreviewCollapsedState {
   description: boolean
   parent: boolean
   children: boolean
-  details: boolean
   dependencies: boolean
-  relations: boolean
   externalRef: boolean
   estimate: boolean
   designNotes: boolean
@@ -137,9 +121,7 @@ const defaultCollapsedState: PreviewCollapsedState = {
   description: true,
   parent: true,
   children: true,
-  details: true,
   dependencies: true,
-  relations: true,
   externalRef: true,
   estimate: true,
   designNotes: true,
@@ -166,9 +148,7 @@ const toggleSection = (section: keyof PreviewCollapsedState) => {
 const isDescriptionOpen = computed(() => previewSections.value.description)
 const isParentOpen = computed(() => previewSections.value.parent)
 const isChildrenOpen = computed(() => previewSections.value.children)
-const isDetailsOpen = computed(() => previewSections.value.details)
 const isDependenciesOpen = computed(() => previewSections.value.dependencies)
-const isRelationsOpen = computed(() => previewSections.value.relations)
 const isExternalRefOpen = computed(() => previewSections.value.externalRef)
 const isEstimateOpen = computed(() => previewSections.value.estimate)
 const isDesignNotesOpen = computed(() => previewSections.value.designNotes)
@@ -176,37 +156,6 @@ const isAcceptanceCriteriaOpen = computed(() => previewSections.value.acceptance
 const isWorkingNotesOpen = computed(() => previewSections.value.workingNotes)
 const isMetadataOpen = computed(() => previewSections.value.metadata)
 const isSpecIdOpen = computed(() => previewSections.value.specId)
-
-// Relations helpers
-const relationTypeLabels: Record<string, string> = {
-  'relates-to': 'Relates To',
-  'related': 'Related',
-  'discovered-from': 'Discovered From',
-  'duplicates': 'Duplicates',
-  'supersedes': 'Supersedes',
-  'caused-by': 'Caused By',
-}
-
-const getRelationLabel = (type: string): string => {
-  return relationTypeLabels[type] || type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
-
-const hasRelations = computed(() => (props.issue.relations?.length ?? 0) > 0)
-
-const groupedRelations = computed(() => {
-  if (!props.issue.relations?.length) return []
-  const groups = new Map<string, typeof props.issue.relations>()
-  for (const rel of props.issue.relations) {
-    const existing = groups.get(rel.relationType) || []
-    existing.push(rel)
-    groups.set(rel.relationType, existing)
-  }
-  return Array.from(groups.entries()).map(([type, items]) => ({
-    type,
-    label: getRelationLabel(type),
-    items: [...items].sort((a, b) => naturalCompare(a.id.toLowerCase(), b.id.toLowerCase())),
-  }))
-})
 
 const formatMetadata = (raw: string): string => {
   try {
@@ -400,52 +349,6 @@ const formatEstimate = (minutes: number) => {
       </div>
     </div>
 
-    <!-- Details Section (Assignee, Labels, Dates) -->
-    <div>
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('details')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isDetailsOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Details</h4>
-      </button>
-      <div v-show="isDetailsOpen" class="mt-1 pl-4.5">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Assignee</h5>
-            <p class="text-xs">{{ issue.assignee || 'Unassigned' }}</p>
-          </div>
-
-          <div>
-            <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Labels</h5>
-            <div v-if="issue.labels?.length" class="flex flex-wrap gap-1">
-              <LabelBadge v-for="label in issue.labels" :key="label" :label="label" size="sm" />
-            </div>
-            <p v-else class="text-xs text-muted-foreground">No labels</p>
-          </div>
-
-          <div>
-            <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Created</h5>
-            <p class="text-xs">{{ formatDate(issue.createdAt) }}</p>
-          </div>
-
-          <div>
-            <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Updated</h5>
-            <p class="text-xs">{{ formatDate(issue.updatedAt) }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Dependencies Section -->
     <div v-if="hasDependencies">
       <button
@@ -504,51 +407,6 @@ const formatEstimate = (minutes: number) => {
                 v-if="!readonly"
                 class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
                 @click.stop="handleRemoveDependency(id, 'blocks')"
-              >
-                <X class="w-3 h-3" />
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Relations Section -->
-    <div v-if="hasRelations">
-      <button
-        class="flex items-center gap-1.5 text-left group"
-        @click="toggleSection('relations')"
-      >
-          <svg
-            class="w-3 h-3 text-muted-foreground transition-transform"
-            :class="{ '-rotate-90': !isRelationsOpen }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">
-            Relations
-            <span v-if="issue.relations?.length" class="text-muted-foreground">({{ issue.relations.length }})</span>
-          </h4>
-      </button>
-      <div v-show="isRelationsOpen" class="mt-1 pl-4.5 space-y-2">
-        <div v-for="group in groupedRelations" :key="group.type">
-          <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{{ group.label }}</h5>
-          <div class="space-y-0.5">
-            <div
-              v-for="rel in group.items"
-              :key="rel.id"
-              class="group/rel -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
-              @click="emit('navigate-to-issue', rel.id)"
-            >
-              <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(rel.priority || availableIssues?.find(i => i.id === rel.id)?.priority)]">{{ getShortId(rel.id) }}</span>
-              <span v-if="rel.title || getIssueTitle(rel.id)" class="truncate text-xs text-muted-foreground">{{ rel.title || getIssueTitle(rel.id) }}</span>
-              <span
-                class="ml-auto opacity-0 group-hover/rel:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
-                @click.stop="handleRemoveRelation(rel.id, rel.direction)"
               >
                 <X class="w-3 h-3" />
               </span>

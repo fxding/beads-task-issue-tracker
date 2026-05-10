@@ -3,6 +3,7 @@ import type { Issue, UpdateIssuePayload } from '~/types/issue'
 import AppSidebar from '~/components/AppSidebar.vue'
 import FolderPicker from '~/components/dashboard/FolderPicker.vue'
 import IssueDetailHeader from '~/components/details/IssueDetailHeader.vue'
+import IssuePropertiesPanel from '~/components/details/IssuePropertiesPanel.vue'
 import IssuePreview from '~/components/details/IssuePreview.vue'
 import IssueAttachmentsSection from '~/components/details/IssueAttachmentsSection.vue'
 import IssueForm from '~/components/details/IssueForm.vue'
@@ -352,33 +353,40 @@ onMounted(async () => {
             />
           </div>
 
-          <ScrollArea v-else class="max-h-[calc(100vh-12rem)]">
-            <div class="p-4">
-              <IssuePreview
-                :issue="currentIssue"
-                :readonly="currentIssue.status === 'closed'"
+          <div v-else class="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+            <ScrollArea class="min-h-0 lg:max-h-[calc(100vh-12rem)]">
+              <div class="space-y-3 pr-1">
+                <IssuePreview
+                  :issue="currentIssue"
+                  :readonly="currentIssue.status === 'closed'"
                 :available-issues="availableIssuesForDeps"
                 @navigate-to-issue="handleNavigateToIssue"
                 @create-child="handleCreateChild"
                 @open-add-blocker="openAddBlockerDialog"
                 @remove-dependency="confirmRemoveDependency"
-                @open-add-relation="openAddRelationDialog"
-                @remove-relation="confirmRemoveRelation"
               />
-              <IssueAttachmentsSection
-                class="mt-3"
-                :issue-id="currentIssue.id"
+                <IssueAttachmentsSection
+                  :issue-id="currentIssue.id"
+                  :readonly="currentIssue.status === 'closed'"
+                  @detach-image="confirmDetachImage"
+                />
+                <CommentSection
+                  :comments="currentIssue.comments || []"
+                  :readonly="currentIssue.status === 'closed'"
+                  @add-comment="handleAddComment"
+                />
+              </div>
+            </ScrollArea>
+
+            <div class="lg:sticky lg:top-4">
+              <IssuePropertiesPanel
+                :issue="currentIssue"
                 :readonly="currentIssue.status === 'closed'"
-                @detach-image="confirmDetachImage"
-              />
-              <CommentSection
-                class="mt-3"
-                :comments="currentIssue.comments || []"
-                :readonly="currentIssue.status === 'closed'"
-                @add-comment="handleAddComment"
+                @edit="handleEditIssue"
+                @navigate-to-issue="handleNavigateToIssue"
               />
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </main>
     </SidebarInset>
