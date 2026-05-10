@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ImageIcon, FileText, X } from 'lucide-vue-next'
-import { Button } from '~/components/ui/button'
+import { FileText, X } from 'lucide-vue-next'
 import ImageThumbnail from '~/components/ui/image-preview/ImageThumbnail.vue'
 import type { AttachmentFile } from '~/composables/useAttachments'
 
@@ -14,7 +13,6 @@ const { openMarkdownGallery } = useMarkdownPreview()
 const { listAttachments } = useAttachments()
 
 const emit = defineEmits<{
-  'attach-image': [paths: string[]]
   'detach-image': [path: string]
 }>()
 
@@ -57,21 +55,6 @@ const handleMarkdownClick = (file: AttachmentFile) => {
   openMarkdownGallery(preparedMarkdown.value, clickedIndex >= 0 ? clickedIndex : 0)
 }
 
-const attachFile = async () => {
-  const { open } = await import('@tauri-apps/plugin-dialog')
-  const selected = await open({
-    multiple: true,
-    filters: [
-      { name: 'All supported files', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'md', 'markdown'] },
-      { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] },
-      { name: 'Markdown', extensions: ['md', 'markdown'] },
-    ],
-  })
-  if (selected && selected.length > 0) {
-    emit('attach-image', selected)
-  }
-}
-
 interface AttachmentsCollapsedState {
   attachments: boolean
 }
@@ -88,13 +71,12 @@ const isAttachmentsOpen = computed(() => attachmentsSection.value.attachments)
 </script>
 
 <template>
-  <div v-if="hasAttachments || !readonly" class="space-y-3">
+  <div v-if="hasAttachments" class="space-y-3">
     <div>
-      <div class="flex items-center justify-between">
-        <button
-          class="flex items-center gap-1.5 text-left group"
-          @click="toggleAttachments"
-        >
+      <button
+        class="flex items-center gap-1.5 text-left group"
+        @click="toggleAttachments"
+      >
           <svg
             class="w-3 h-3 text-muted-foreground transition-transform"
             :class="{ '-rotate-90': !isAttachmentsOpen }"
@@ -109,18 +91,7 @@ const isAttachmentsOpen = computed(() => attachmentsSection.value.attachments)
             Attachments
             <span v-if="hasAttachments" class="text-muted-foreground">({{ totalAttachments }})</span>
           </h4>
-        </button>
-        <Button
-          v-if="!readonly"
-          type="button"
-          variant="outline"
-          size="sm"
-          @click="attachFile"
-        >
-          <ImageIcon class="w-3 h-3 mr-1" />
-          Attach
-        </Button>
-      </div>
+      </button>
       <div v-show="isAttachmentsOpen" class="mt-2 pl-4.5">
         <div v-if="hasAttachments" class="space-y-3">
           <div v-if="attachedImages.length > 0" class="flex flex-wrap gap-4">

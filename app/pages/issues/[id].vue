@@ -51,6 +51,7 @@ const {
   handleCloseIssue,
   handleReopenIssue,
   handleAttachImage,
+  openAttachmentDialog,
   confirmDetachImage,
   confirmRemoveDependency,
   openAddBlockerDialog,
@@ -333,6 +334,9 @@ onMounted(async () => {
             @close="handleCloseIssue"
             @delete="handleDeleteIssue"
             @toggle-pin="togglePin(currentIssue.id)"
+            @add-attachment="openAttachmentDialog"
+            @add-blocker="openAddBlockerDialog(currentIssue.id)"
+            @add-relation="openAddRelationDialog(currentIssue.id)"
           />
 
           <div v-if="isEditMode" class="min-h-[70vh] p-4">
@@ -365,7 +369,6 @@ onMounted(async () => {
                 class="mt-3"
                 :issue-id="currentIssue.id"
                 :readonly="currentIssue.status === 'closed'"
-                @attach-image="handleAttachImage"
                 @detach-image="confirmDetachImage"
               />
               <CommentSection

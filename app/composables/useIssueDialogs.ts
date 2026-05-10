@@ -204,6 +204,24 @@ export function useIssueDialogs() {
     await fetchIssue(selectedIssue.value.id)
   }
 
+  const openAttachmentDialog = async () => {
+    if (!selectedIssue.value) return
+
+    const { open } = await import('@tauri-apps/plugin-dialog')
+    const selected = await open({
+      multiple: true,
+      filters: [
+        { name: 'All supported files', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'md', 'markdown'] },
+        { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] },
+        { name: 'Markdown', extensions: ['md', 'markdown'] },
+      ],
+    })
+
+    if (selected && selected.length > 0) {
+      await handleAttachImage(selected)
+    }
+  }
+
   // Detach image — delete file from filesystem, no external_ref modification
   const confirmDetachImage = (filename: string) => {
     detachImagePath.value = filename
@@ -523,6 +541,7 @@ export function useIssueDialogs() {
     detachImagePath,
     isDetaching,
     handleAttachImage,
+    openAttachmentDialog,
     confirmDetachImage,
     handleDetachImage,
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus, X } from 'lucide-vue-next'
+import { X } from 'lucide-vue-next'
 import type { Issue } from '~/types/issue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -14,6 +14,8 @@ const props = defineProps<{
   readonly?: boolean
   availableIssues?: Array<{ id: string; title: string; priority?: string; status?: string }>
 }>()
+
+const hasDependencies = computed(() => Boolean(props.issue.blockedBy?.length || props.issue.blocks?.length))
 
 // Extract non-image external references (URLs, IDs) — only real refs now
 const nonImageRefs = computed(() => extractNonImageRefs(props.issue.externalRef))
@@ -444,13 +446,12 @@ const formatEstimate = (minutes: number) => {
       </div>
     </div>
 
-    <!-- Dependencies Section (show when has deps OR editable) -->
-    <div v-if="issue.blockedBy?.length || issue.blocks?.length || !readonly">
-      <div class="flex items-center justify-between">
-        <button
-          class="flex items-center gap-1.5 text-left group"
-          @click="toggleSection('dependencies')"
-        >
+    <!-- Dependencies Section -->
+    <div v-if="hasDependencies">
+      <button
+        class="flex items-center gap-1.5 text-left group"
+        @click="toggleSection('dependencies')"
+      >
           <svg
             class="w-3 h-3 text-muted-foreground transition-transform"
             :class="{ '-rotate-90': !isDependenciesOpen }"
@@ -462,18 +463,7 @@ const formatEstimate = (minutes: number) => {
             <polyline points="6 9 12 15 18 9" />
           </svg>
           <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Dependencies</h4>
-        </button>
-        <Button
-          v-if="!readonly"
-          type="button"
-          variant="outline"
-          size="sm"
-          @click="emit('open-add-blocker', issue.id)"
-        >
-          <Plus class="w-3 h-3 mr-1" />
-          Add blocker
-        </Button>
-      </div>
+      </button>
       <div v-show="isDependenciesOpen" class="mt-1 pl-4.5 space-y-2">
         <!-- Blocked By -->
         <div v-if="issue.blockedBy?.length">
@@ -523,13 +513,12 @@ const formatEstimate = (minutes: number) => {
       </div>
     </div>
 
-    <!-- Relations Section (non-blocking dependency types, always editable) -->
-    <div v-if="hasRelations || !readonly">
-      <div class="flex items-center justify-between">
-        <button
-          class="flex items-center gap-1.5 text-left group"
-          @click="toggleSection('relations')"
-        >
+    <!-- Relations Section -->
+    <div v-if="hasRelations">
+      <button
+        class="flex items-center gap-1.5 text-left group"
+        @click="toggleSection('relations')"
+      >
           <svg
             class="w-3 h-3 text-muted-foreground transition-transform"
             :class="{ '-rotate-90': !isRelationsOpen }"
@@ -544,18 +533,7 @@ const formatEstimate = (minutes: number) => {
             Relations
             <span v-if="issue.relations?.length" class="text-muted-foreground">({{ issue.relations.length }})</span>
           </h4>
-        </button>
-        <Button
-          v-if="!readonly"
-          type="button"
-          variant="outline"
-          size="sm"
-          @click="emit('open-add-relation', issue.id)"
-        >
-          <Plus class="w-3 h-3 mr-1" />
-          Add relation
-        </Button>
-      </div>
+      </button>
       <div v-show="isRelationsOpen" class="mt-1 pl-4.5 space-y-2">
         <div v-for="group in groupedRelations" :key="group.type">
           <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{{ group.label }}</h5>

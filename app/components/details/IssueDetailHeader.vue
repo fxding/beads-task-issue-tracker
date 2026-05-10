@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link2, Paperclip, ShieldAlert } from 'lucide-vue-next'
 import type { Issue } from '~/types/issue'
 import TypeBadge from '~/components/issues/TypeBadge.vue'
 import StatusBadge from '~/components/issues/StatusBadge.vue'
@@ -16,6 +17,9 @@ defineEmits<{
   close: []
   delete: []
   'toggle-pin': []
+  'add-attachment': []
+  'add-blocker': []
+  'add-relation': []
 }>()
 </script>
 
@@ -33,8 +37,8 @@ defineEmits<{
     <h3 class="text-sm font-semibold line-clamp-2">{{ selectedIssue.title }}</h3>
 
     <!-- Action buttons -->
-    <div class="flex items-center justify-between pb-3">
-      <div class="flex items-center gap-1">
+    <div class="flex items-center justify-between gap-2 pb-3">
+      <div class="flex items-center gap-1 flex-wrap">
         <!-- Pin/unpin toggle -->
         <Button
           :variant="isPinned ? 'secondary' : 'outline'"
@@ -77,6 +81,18 @@ defineEmits<{
             <polyline points="20 6 9 17 4 12" />
           </svg>
           Close
+        </Button>
+        <Button v-if="selectedIssue.status !== 'closed'" variant="outline" size="sm" @click="$emit('add-attachment')">
+          <Paperclip class="w-3 h-3 mr-1" />
+          Attach
+        </Button>
+        <Button v-if="selectedIssue.status !== 'closed'" variant="outline" size="sm" @click="$emit('add-blocker')">
+          <ShieldAlert class="w-3 h-3 mr-1" />
+          Add blocker
+        </Button>
+        <Button v-if="selectedIssue.status !== 'closed'" variant="outline" size="sm" @click="$emit('add-relation')">
+          <Link2 class="w-3 h-3 mr-1" />
+          Add relation
         </Button>
       </div>
       <Button
