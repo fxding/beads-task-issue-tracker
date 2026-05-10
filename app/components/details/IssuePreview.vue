@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ImageIcon, FileText, Plus, X } from 'lucide-vue-next'
+import { Plus, X } from 'lucide-vue-next'
 import type { Issue } from '~/types/issue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -7,9 +7,7 @@ import { LinkifiedText } from '~/components/ui/linkified-text'
 import LabelBadge from '~/components/issues/LabelBadge.vue'
 import StatusBadge from '~/components/issues/StatusBadge.vue'
 import PriorityBadge from '~/components/issues/PriorityBadge.vue'
-import ImageThumbnail from '~/components/ui/image-preview/ImageThumbnail.vue'
 import { extractNonImageRefs, isUrl } from '~/utils/markdown'
-import type { AttachmentFile } from '~/composables/useAttachments'
 
 const props = defineProps<{
   issue: Issue
@@ -17,70 +15,8 @@ const props = defineProps<{
   availableIssues?: Array<{ id: string; title: string; priority?: string; status?: string }>
 }>()
 
-const { openGallery } = useImagePreview()
-const { openMarkdownGallery } = useMarkdownPreview()
-const { listAttachments } = useAttachments()
-
-// Filesystem-based attachments (async, loaded per issue)
-const attachedImages = ref<AttachmentFile[]>([])
-const attachedMarkdown = ref<AttachmentFile[]>([])
-
-const loadAttachments = async () => {
-  if (!props.issue?.id) return
-  const result = await listAttachments(props.issue.id)
-  attachedImages.value = result.images
-  attachedMarkdown.value = result.markdown
-}
-
-// Reload when issue changes (watch the whole object so fetchIssue triggers reload)
-watch(() => props.issue, () => loadAttachments(), { immediate: true })
-
-// Total attachment count (images + markdown)
-const totalAttachments = computed(() => attachedImages.value.length + attachedMarkdown.value.length)
-
 // Extract non-image external references (URLs, IDs) — only real refs now
 const nonImageRefs = computed(() => extractNonImageRefs(props.issue.externalRef))
-
-// Prepare images with full paths for gallery
-const preparedImages = computed(() =>
-  attachedImages.value.map(img => ({
-    path: img.path,
-    alt: img.filename,
-  })),
-)
-
-const handleImageClick = async (file: AttachmentFile) => {
-  const clickedIndex = preparedImages.value.findIndex(img => img.path === file.path)
-  openGallery(preparedImages.value, clickedIndex >= 0 ? clickedIndex : 0)
-}
-
-// Prepare markdown files with full paths for gallery
-const preparedMarkdown = computed(() =>
-  attachedMarkdown.value.map(md => ({
-    path: md.path,
-    alt: md.filename,
-  })),
-)
-
-const handleMarkdownClick = (file: AttachmentFile) => {
-  const clickedIndex = preparedMarkdown.value.findIndex(md => md.path === file.path)
-  openMarkdownGallery(preparedMarkdown.value, clickedIndex >= 0 ? clickedIndex : 0)
-}
-
-const attachFile = async () => {
-  const { open } = await import('@tauri-apps/plugin-dialog')
-  const selected = await open({
-    multiple: true,
-    filters: [
-      { name: 'All supported files', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'md', 'markdown'] },
-      { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] },
-      { name: 'Markdown', extensions: ['md', 'markdown'] },
-    ],
-  })
-  if (selected && selected.length > 0) {
-    emit('attach-image', selected)
-  }
-}
 
 const emit = defineEmits<{
   'navigate-to-issue': [id: string]
@@ -180,7 +116,6 @@ const handleRemoveRelation = (targetId: string, direction: string) => {
 
 // Collapsible section states (persisted per project, all open by default)
 interface PreviewCollapsedState {
-  attachments: boolean
   description: boolean
   parent: boolean
   children: boolean
@@ -197,7 +132,6 @@ interface PreviewCollapsedState {
 }
 
 const defaultCollapsedState: PreviewCollapsedState = {
-  attachments: true,
   description: true,
   parent: true,
   children: true,
@@ -227,7 +161,6 @@ const toggleSection = (section: keyof PreviewCollapsedState) => {
 }
 
 // Direct getters for template (no computed writable - better reactivity)
-const isAttachmentsOpen = computed(() => previewSections.value.attachments)
 const isDescriptionOpen = computed(() => previewSections.value.description)
 const isParentOpen = computed(() => previewSections.value.parent)
 const isChildrenOpen = computed(() => previewSections.value.children)
@@ -303,82 +236,6 @@ const formatEstimate = (minutes: number) => {
 
 <template>
   <div class="space-y-3">
-    <!-- Attachments Section (images from externalRef) -->
-    <div>
-      <div class="flex items-center justify-between">
-        <button
-          class="flex items-center gap-1.5 text-left group"
-          @click="toggleSection('attachments')"
-        >
-          <svg
-            class="w-3 h-3 text-muted-foreground transition-transform"
-            :class="{ '-rotate-90': !isAttachmentsOpen }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">
-            Attachments
-            <span v-if="totalAttachments > 0" class="text-muted-foreground">({{ totalAttachments }})</span>
-          </h4>
-        </button>
-        <Button
-          v-if="!readonly"
-          type="button"
-          variant="outline"
-          size="sm"
-          @click="attachFile"
-        >
-          <ImageIcon class="w-3 h-3 mr-1" />
-          Attach
-        </Button>
-      </div>
-      <div v-show="isAttachmentsOpen" class="mt-2 pl-4.5">
-        <div v-if="totalAttachments > 0" class="space-y-3">
-          <!-- Image thumbnails -->
-          <div v-if="attachedImages.length > 0" class="flex flex-wrap gap-4">
-            <ImageThumbnail
-              v-for="img in attachedImages"
-              :key="img.filename"
-              :src="img.path"
-              :alt="img.filename"
-              :show-remove="!readonly"
-              @click="handleImageClick(img)"
-              @remove="emit('detach-image', img.filename)"
-            />
-          </div>
-          <!-- Markdown file list -->
-          <div v-if="attachedMarkdown.length > 0" class="space-y-1">
-            <div
-              v-for="md in attachedMarkdown"
-              :key="md.filename"
-              class="flex items-center gap-2 group/md"
-            >
-              <button
-                class="flex min-w-0 items-center gap-1.5 text-xs text-foreground hover:underline"
-                @click="handleMarkdownClick(md)"
-              >
-                <FileText class="w-3.5 h-3.5 shrink-0" />
-                <span class="truncate">{{ md.filename }}</span>
-              </button>
-              <button
-                v-if="!readonly"
-                type="button"
-                class="opacity-0 group-hover/md:opacity-100 text-destructive hover:text-destructive/80 transition-all shrink-0"
-                @click="emit('detach-image', md.filename)"
-              >
-                <X class="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-        <p v-else class="text-xs text-muted-foreground">No attachments</p>
-      </div>
-    </div>
-
     <!-- Description Section -->
     <div>
       <button
@@ -399,6 +256,29 @@ const formatEstimate = (minutes: number) => {
       </button>
       <div v-show="isDescriptionOpen" class="mt-1 pl-4.5">
         <div class="text-xs"><LinkifiedText :text="issue.description" fallback="No description provided." /></div>
+      </div>
+    </div>
+
+    <!-- Acceptance Criteria Section (only if exists) -->
+    <div v-if="issue.acceptanceCriteria">
+      <button
+        class="flex items-center gap-1.5 w-full text-left group"
+        @click="toggleSection('acceptanceCriteria')"
+      >
+        <svg
+          class="w-3 h-3 text-muted-foreground transition-transform"
+          :class="{ '-rotate-90': !isAcceptanceCriteriaOpen }"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Acceptance Criteria</h4>
+      </button>
+      <div v-show="isAcceptanceCriteriaOpen" class="mt-1 pl-4.5">
+        <div class="text-xs"><LinkifiedText :text="issue.acceptanceCriteria" /></div>
       </div>
     </div>
 
@@ -644,7 +524,7 @@ const formatEstimate = (minutes: number) => {
     </div>
 
     <!-- Relations Section (non-blocking dependency types, always editable) -->
-    <div v-if="hasRelations || availableIssues?.length">
+    <div v-if="hasRelations || !readonly">
       <div class="flex items-center justify-between">
         <button
           class="flex items-center gap-1.5 text-left group"
@@ -666,6 +546,7 @@ const formatEstimate = (minutes: number) => {
           </h4>
         </button>
         <Button
+          v-if="!readonly"
           type="button"
           variant="outline"
           size="sm"
@@ -745,28 +626,6 @@ const formatEstimate = (minutes: number) => {
       </div>
     </div>
 
-    <!-- Acceptance Criteria Section (only if exists) -->
-    <div v-if="issue.acceptanceCriteria">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('acceptanceCriteria')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isAcceptanceCriteriaOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Acceptance Criteria</h4>
-      </button>
-      <div v-show="isAcceptanceCriteriaOpen" class="mt-1 pl-4.5">
-        <div class="text-xs"><LinkifiedText :text="issue.acceptanceCriteria" /></div>
-      </div>
-    </div>
 
     <!-- Working Notes Section (only if exists) -->
     <div v-if="issue.workingNotes">

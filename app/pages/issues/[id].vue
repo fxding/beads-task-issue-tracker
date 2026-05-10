@@ -4,6 +4,7 @@ import AppSidebar from '~/components/AppSidebar.vue'
 import FolderPicker from '~/components/dashboard/FolderPicker.vue'
 import IssueDetailHeader from '~/components/details/IssueDetailHeader.vue'
 import IssuePreview from '~/components/details/IssuePreview.vue'
+import IssueAttachmentsSection from '~/components/details/IssueAttachmentsSection.vue'
 import IssueForm from '~/components/details/IssueForm.vue'
 import CommentSection from '~/components/details/CommentSection.vue'
 import DebugPanel from '~/components/layout/DebugPanel.vue'
@@ -354,13 +355,18 @@ onMounted(async () => {
                 :readonly="currentIssue.status === 'closed'"
                 :available-issues="availableIssuesForDeps"
                 @navigate-to-issue="handleNavigateToIssue"
-                @attach-image="handleAttachImage"
-                @detach-image="confirmDetachImage"
                 @create-child="handleCreateChild"
                 @open-add-blocker="openAddBlockerDialog"
                 @remove-dependency="confirmRemoveDependency"
                 @open-add-relation="openAddRelationDialog"
                 @remove-relation="confirmRemoveRelation"
+              />
+              <IssueAttachmentsSection
+                class="mt-3"
+                :issue-id="currentIssue.id"
+                :readonly="currentIssue.status === 'closed'"
+                @attach-image="handleAttachImage"
+                @detach-image="confirmDetachImage"
               />
               <CommentSection
                 class="mt-3"
