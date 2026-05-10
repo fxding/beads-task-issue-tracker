@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import type { Issue } from '~/types/issue'
-import TypeBadge from '~/components/issues/TypeBadge.vue'
-import StatusBadge from '~/components/issues/StatusBadge.vue'
-import PriorityBadge from '~/components/issues/PriorityBadge.vue'
 import { Button } from '~/components/ui/button'
 
 defineProps<{
@@ -17,14 +14,6 @@ defineEmits<{
 
 <template>
   <div class="bg-card/90 p-4 space-y-3">
-    <!-- Badges row -->
-    <div class="flex items-center gap-1.5 flex-wrap">
-      <CopyableId :value="selectedIssue.id" :display-value="selectedIssue.id.includes('-') ? selectedIssue.id.slice(selectedIssue.id.lastIndexOf('-') + 1) : selectedIssue.id" />
-      <TypeBadge :type="selectedIssue.type" size="sm" />
-      <StatusBadge :status="selectedIssue.status" size="sm" />
-      <PriorityBadge :priority="selectedIssue.priority" size="sm" />
-    </div>
-
     <!-- Title -->
     <h3 class="text-sm font-semibold line-clamp-2">{{ selectedIssue.title }}</h3>
 
