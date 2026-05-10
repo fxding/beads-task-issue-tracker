@@ -167,7 +167,7 @@ const isCurrentProject = computed(() => isProject(currentPath.value))
           <div class="flex items-center gap-2 min-w-0">
             <svg
               class="w-5 h-5 shrink-0"
-              :class="hasBeads ? 'text-green-500' : 'text-muted-foreground'"
+              :class="hasBeads ? 'text-foreground' : 'text-muted-foreground'"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
@@ -176,10 +176,10 @@ const isCurrentProject = computed(() => isProject(currentPath.value))
             <span class="font-medium truncate">{{ currentFolderName }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <Badge v-if="hasBeads" class="bg-green-600 text-white shrink-0">
+            <Badge v-if="hasBeads" variant="secondary" class="shrink-0">
               Beads Project
             </Badge>
-            <Badge v-if="usesDolt" variant="outline" class="text-[#29E3C1] border-[#29E3C1]/50 shrink-0 px-2 py-1">
+            <Badge v-if="usesDolt" variant="outline" class="shrink-0 px-2 py-1 text-muted-foreground">
               <svg style="width: 2rem; height: 0.65rem;" viewBox="0 0 163 56" fill="none">
                 <path d="M28.87 7.0459V45.8632C28.8654 46.7997 28.498 47.6965 27.8476 48.3591C27.1971 49.0217 26.316 49.3964 25.3957 49.402H10.4953C9.5713 49.402 8.68489 49.0298 8.0299 48.3666C7.3749 47.7035 7.00462 46.8034 7 45.8632V24.7722C7.00462 23.832 7.3749 22.9319 8.0299 22.2688C8.68489 21.6056 9.5713 21.2334 10.4953 21.2334H22.2115" stroke="currentColor" stroke-width="12.6599" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M156.3 49.4019H145.283" stroke="currentColor" stroke-width="12.6599" stroke-linecap="round" stroke-linejoin="round"/>
@@ -225,7 +225,7 @@ const isCurrentProject = computed(() => isProject(currentPath.value))
               >
                 <svg
                   class="w-5 h-5 shrink-0"
-                  :class="entry.hasBeads ? 'text-green-500' : 'text-muted-foreground'"
+                  :class="entry.hasBeads ? 'text-foreground' : 'text-muted-foreground'"
                   viewBox="0 0 24 24"
                   :fill="entry.hasBeads ? 'currentColor' : 'none'"
                   stroke="currentColor"
@@ -234,10 +234,10 @@ const isCurrentProject = computed(() => isProject(currentPath.value))
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                 </svg>
                 <span class="flex-1 truncate">{{ entry.name }}</span>
-                <Badge v-if="entry.hasBeads" variant="outline" class="text-green-500 border-green-500/50 text-xs">
+                <Badge v-if="entry.hasBeads" variant="secondary" class="text-xs">
                   beads
                 </Badge>
-                <Badge v-if="entry.usesDolt" variant="outline" class="text-[#29E3C1] border-[#29E3C1]/50 text-xs px-1.5 py-0.5">
+                <Badge v-if="entry.usesDolt" variant="outline" class="px-1.5 py-0.5 text-xs text-muted-foreground">
                   <svg style="width: 1.75rem; height: 0.55rem;" viewBox="0 0 163 56" fill="none">
                     <path d="M28.87 7.0459V45.8632C28.8654 46.7997 28.498 47.6965 27.8476 48.3591C27.1971 49.0217 26.316 49.3964 25.3957 49.402H10.4953C9.5713 49.402 8.68489 49.0298 8.0299 48.3666C7.3749 47.7035 7.00462 46.8034 7 45.8632V24.7722C7.00462 23.832 7.3749 22.9319 8.0299 22.2688C8.68489 21.6056 9.5713 21.2334 10.4953 21.2334H22.2115" stroke="currentColor" stroke-width="12.6599" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M156.3 49.4019H145.283" stroke="currentColor" stroke-width="12.6599" stroke-linecap="round" stroke-linejoin="round"/>

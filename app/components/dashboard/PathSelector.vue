@@ -368,7 +368,7 @@ watch(() => projects.value.length, () => {
       </div>
       <div
         v-show="!isProjectsCollapsed && projects.length === 0"
-        class="rounded-xl border border-dashed border-sidebar-border/70 bg-sidebar-accent/20 p-3 text-sm text-muted-foreground"
+        class="rounded-lg border border-dashed border-sidebar-border/70 bg-muted/40 p-3 text-sm text-muted-foreground"
       >
         Add a project folder to populate the workspace switcher.
       </div>
@@ -428,8 +428,8 @@ watch(() => projects.value.length, () => {
               v-if="probeEnabled"
               class="shrink-0 mr-2 p-0 rounded transition-colors"
               :class="isExposed(proj.path)
-                ? 'text-green-500'
-                : 'text-muted-foreground/40 hover:text-green-500'"
+                ? 'text-foreground'
+                : 'text-muted-foreground/40 hover:text-foreground'"
               :disabled="togglingPath === proj.path"
               @click.stop.prevent="requestToggleExpose(proj.path)"
               :title="isExposed(proj.path) ? 'Exposed to monitoring (click to disable)' : 'Not exposed (click to expose)'"
