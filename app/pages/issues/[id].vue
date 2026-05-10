@@ -355,6 +355,12 @@ onMounted(async () => {
                 <Link2 class="mr-2 h-3.5 w-3.5" />
                 Create related
               </DropdownMenuItem>
+              <DropdownMenuItem v-if="currentIssue.status !== 'closed'" @select="handleCloseIssue">
+                <svg class="mr-2 h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Close
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem class="text-destructive focus:text-destructive" @select="handleDeleteIssue">
                 <svg class="mr-2 h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -400,7 +406,6 @@ onMounted(async () => {
                   :selected-issue="currentIssue"
                   @edit="handleEditIssue"
                   @reopen="handleReopenIssue"
-                  @close="handleCloseIssue"
                 />
                 <IssuePreview
                   :issue="currentIssue"

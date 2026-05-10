@@ -12,7 +12,6 @@ defineProps<{
 defineEmits<{
   edit: []
   reopen: []
-  close: []
 }>()
 </script>
 
@@ -51,18 +50,6 @@ defineEmits<{
             <path d="M3 3v5h5" />
           </svg>
           Reopen
-        </Button>
-        <!-- Close button: only when not closed -->
-        <Button
-          v-if="selectedIssue.status !== 'closed'"
-          variant="outline"
-          size="sm"
-          @click="$emit('close')"
-        >
-          <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          Close
         </Button>
       </div>
     </div>
