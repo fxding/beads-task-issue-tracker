@@ -301,7 +301,7 @@ onMounted(async () => {
     <SidebarInset class="min-w-0 bg-background">
       <header class="flex h-16 shrink-0 items-center gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur rounded-t">
         <SidebarTrigger class="-ml-1" />
-        <Separator orientation="vertical" class="mr-1 h-4" />
+        <Separator orientation="vertical" class="mr-1 h-4!" />
 
         <div class="min-w-0 flex-1">
           <Breadcrumb>
