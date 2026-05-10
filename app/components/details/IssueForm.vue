@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { nextTick } from 'vue'
+import { computed, nextTick, reactive, watch } from 'vue'
 import { ImageIcon } from 'lucide-vue-next'
 import type { Issue, IssueType, IssueStatus, IssuePriority, UpdateIssuePayload } from '~/types/issue'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { MarkdownEditor } from '~/components/ui/markdown-editor'
 import { Textarea } from '~/components/ui/textarea'
 import { Label } from '~/components/ui/label'
 import { ScrollArea } from '~/components/ui/scroll-area'
@@ -309,12 +310,11 @@ const attachFile = async () => {
       <div class="space-y-3 py-3">
         <div class="space-y-1">
           <Label for="description" class="text-[10px] uppercase tracking-wide text-muted-foreground">Description</Label>
-          <Textarea
-            id="description"
+          <MarkdownEditor
             v-model="form.description"
             placeholder="Describe the issue..."
-            rows="3"
             class="text-xs"
+            min-height-class="min-h-36"
           />
         </div>
 
