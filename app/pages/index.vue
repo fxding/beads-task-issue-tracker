@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Issue, UpdateIssuePayload } from '~/types/issue'
+import type { Issue } from '~/types/issue'
 
 // Layout components
 import AppSidebar from '~/components/AppSidebar.vue'
@@ -10,12 +10,6 @@ import DialogsLayer from '~/components/layout/DialogsLayer.vue'
 import FolderPicker from '~/components/dashboard/FolderPicker.vue'
 import PrerequisitesCard from '~/components/dashboard/PrerequisitesCard.vue'
 
-
-// Details components
-import IssueDetailHeader from '~/components/details/IssueDetailHeader.vue'
-import IssuePreview from '~/components/details/IssuePreview.vue'
-import IssueForm from '~/components/details/IssueForm.vue'
-import CommentSection from '~/components/details/CommentSection.vue'
 
 // Issues components
 import IssueListPanel from '~/components/issues/IssueListPanel.vue'
@@ -32,7 +26,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '~/components/ui/breadcrumb'
-import { ScrollArea } from '~/components/ui/scroll-area'
 import { ConfirmDialog } from '~/components/ui/confirm-dialog'
 import {
   Dialog,
@@ -52,7 +45,7 @@ import { openUrl } from '~/utils/open-url'
 
 // Composables
 const { filters, toggleStatus, toggleType, togglePriority, toggleAssignee, clearFilters, setStatusFilter, setSearch, toggleLabelFilter } = useFilters()
-const { columns, toggleColumn, setColumns, resetColumns } = useColumnConfig()
+const { columns, setColumns, resetColumns } = useColumnConfig()
 const { beadsPath, hasStoredPath } = useBeadsPath()
 const { success: notifySuccess, error: notifyError } = useNotification()
 const { isBr, init: initCliClient } = useCliClient()
@@ -71,16 +64,10 @@ const {
   sortField,
   sortDirection,
   setSort,
-  // Epic expand
-  expandEpic,
   // Actions
   fetchIssues,
   fetchPollData,
-  fetchIssue,
-  createIssue,
-  updateIssue,
   selectIssue,
-  addComment,
   clearIssues,
   newlyAddedIds,
 } = useIssues()
@@ -91,9 +78,10 @@ const { needsRepair, affectedProject, isRepairing, repairError, repairProgress, 
 const { needsMigration, affectedProject: migrateAffectedProject, isMigrating, migrateError, migrate: migrateToDolt, checkProject: checkMigrationNeeded, dismiss: dismissMigration } = useMigrateToDolt()
 const { needsMigration: needsRefsMigration, refCount: refsRefCount, isMigrating: isRefsMigrating, migrateError: refsMigrateError, checkProject: checkRefsMigration, migrate: migrateRefs, dismiss: dismissRefsMigration } = useMigrateRefs()
 const { currentTheme, cycleTheme } = useTheme()
+const router = useRouter()
 
 // Sidebar resize
-const { isLeftSidebarOpen, isRightSidebarOpen, leftSidebarWidth, rightSidebarWidth, isResizing, startResizeLeft, startResizeRight } = useSidebarResize()
+const { isLeftSidebarOpen, leftSidebarWidth, startResizeLeft } = useSidebarResize()
 
 type IssuesView = 'table' | 'list' | 'board' | 'stats'
 const activeIssuesView = useProjectStorage<IssuesView>('activeIssuesView', 'table')
@@ -114,11 +102,6 @@ const issuesViewMeta: Record<IssuesView, { label: string, description: string }>
     label: 'Stats',
     description: 'Track project health and status distribution.',
   },
-}
-
-// Close right sidebar on init if no issue selected
-if (import.meta.client && !selectedIssue.value) {
-  isRightSidebarOpen.value = false
 }
 
 // Probe enabled toggle (dev-only — hidden in production until probe is a public feature)
@@ -322,42 +305,12 @@ onUnmounted(() => {
 
 // Issue dialogs composable (dialog-only state lives in DialogsLayer via singleton)
 const {
-  isEditMode, isCreatingNew, multiSelectMode, selectedIds, toggleMultiSelect,
-  handleDeleteIssue, handleCloseIssue, handleReopenIssue,
-  handleAttachImage, confirmDetachImage,
-  confirmRemoveDependency, openAddBlockerDialog, openAddRelationDialog, confirmRemoveRelation,
-  bdDotNotationParent, availableIssuesForDeps, initRelationTypes,
+  multiSelectMode,
+  selectedIds,
+  toggleMultiSelect,
+  handleDeleteIssue,
+  initRelationTypes,
 } = useIssueDialogs()
-
-const leftSidebarStateBeforeEdit = ref<boolean | null>(null)
-
-// Watch edit mode to manage left sidebar state
-watch(
-  () => isEditMode.value || isCreatingNew.value,
-  (inEditMode) => {
-    if (inEditMode) {
-      // Save current state and close
-      leftSidebarStateBeforeEdit.value = isLeftSidebarOpen.value
-      isLeftSidebarOpen.value = false
-    } else if (leftSidebarStateBeforeEdit.value !== null) {
-      // Restore previous state
-      isLeftSidebarOpen.value = leftSidebarStateBeforeEdit.value
-      leftSidebarStateBeforeEdit.value = null
-    }
-  }
-)
-
-// Close and clear panel when issue transitions to closed (not when selecting an already closed issue)
-watch(
-  () => selectedIssue.value?.status,
-  (newStatus, oldStatus) => {
-    if (newStatus === 'closed' && oldStatus && oldStatus !== 'closed') {
-      isEditMode.value = false
-      selectIssue(null)
-      isRightSidebarOpen.value = false
-    }
-  }
-)
 
 // Handlers
 const handleRefresh = () => {
@@ -437,8 +390,6 @@ const handlePathChange = async () => {
   if (oldPath) probeUnregisterProject(oldPath)
 
   selectIssue(null)
-  isEditMode.value = false
-  isCreatingNew.value = false
   clearIssues()  // Reset issue list so new-issue detection doesn't flash all rows
   clearStats()   // Reset stats so previous project's ready work doesn't persist
 
@@ -509,127 +460,28 @@ const handleReset = () => {
   // Last project removed - clear all data to show onboarding
   clearIssues()
   clearStats()
-  isEditMode.value = false
-  isCreatingNew.value = false
 }
 
 const handleAddIssue = () => {
   selectIssue(null)
-  isCreatingNew.value = true
-  isEditMode.value = true
-  isRightSidebarOpen.value = true
+  router.push('/issues/new')
 }
 
 const handleSelectIssue = async (issue: Issue) => {
-  // First set the issue from list for immediate feedback
   selectIssue(issue)
-  isEditMode.value = false
-  isCreatingNew.value = false
-  isRightSidebarOpen.value = true
-  // Then fetch full details (including extended fields) in background
-  await fetchIssue(issue.id)
+  await router.push(`/issues/${encodeURIComponent(issue.id)}`)
 }
 
 const handleEditIssueFromTable = async (issue: Issue) => {
-  // First set the issue from list for immediate feedback
   selectIssue(issue)
-  isEditMode.value = true
-  isCreatingNew.value = false
-  isRightSidebarOpen.value = true
-  // Then fetch full details (including extended fields) in background
-  await fetchIssue(issue.id)
+  await router.push({
+    path: `/issues/${encodeURIComponent(issue.id)}`,
+    query: { edit: '1' },
+  })
 }
 
 const handleDeselectIssue = () => {
   selectIssue(null)
-  isEditMode.value = false
-  isCreatingNew.value = false
-}
-
-const handleEditIssue = () => {
-  isEditMode.value = true
-  isCreatingNew.value = false
-}
-
-const handleCancelEdit = () => {
-  // Si on était en mode création, fermer le panel
-  if (isCreatingNew.value) {
-    selectedIssue.value = null
-    isRightSidebarOpen.value = false
-    defaultParent.value = undefined
-  }
-  isEditMode.value = false
-  isCreatingNew.value = false
-}
-
-const handleSaveIssue = async (payload: UpdateIssuePayload) => {
-  try {
-    if (isCreatingNew.value) {
-      // Use the parent from payload (set in form) or from defaultParent (set via create-child)
-      const parentId = payload.parent || defaultParent.value
-      const result = await createIssue({
-        title: payload.title || '',
-        description: payload.description,
-        type: payload.type,
-        priority: payload.priority,
-        assignee: payload.assignee,
-        labels: payload.labels,
-        externalRef: payload.externalRef,
-        estimateMinutes: payload.estimateMinutes,
-        designNotes: payload.designNotes,
-        acceptanceCriteria: payload.acceptanceCriteria,
-        workingNotes: payload.workingNotes,
-        parent: parentId || undefined,
-      })
-      if (result) {
-        selectIssue(result)
-        // Fetch full issue details to get all fields
-        await fetchIssue(result.id)
-        notifySuccess('Issue created')
-      }
-      defaultParent.value = undefined
-    } else if (selectedIssue.value) {
-      await updateIssue(selectedIssue.value.id, payload)
-      // Fetch full issue details to get comments and all fields
-      await fetchIssue(selectedIssue.value.id)
-      notifySuccess('Issue saved')
-    }
-    isEditMode.value = false
-    isCreatingNew.value = false
-    await fetchStats(issues.value)
-  } catch {
-    notifyError('Failed to save issue')
-  }
-}
-
-
-const handleAddComment = async (content: string) => {
-  if (!selectedIssue.value) return
-  try {
-    await addComment(selectedIssue.value.id, content)
-    notifySuccess('Comment added')
-  } catch {
-    notifyError('Failed to add comment')
-  }
-}
-
-
-const handleNavigateToIssue = async (id: string) => {
-  // Check if this is a child issue (format: parent-id.number)
-  // If so, expand the parent epic to make the child visible
-  const lastDotIndex = id.lastIndexOf('.')
-  if (lastDotIndex > 0) {
-    const parentId = id.slice(0, lastDotIndex)
-    expandEpic(parentId)
-  }
-
-  // Find the issue in the current list or fetch it
-  const existingIssue = issues.value.find(i => i.id === id)
-  if (existingIssue) {
-    selectIssue(existingIssue)
-  }
-  // Fetch full details (including extended fields, parent, children)
-  await fetchIssue(id)
 }
 
 
@@ -682,32 +534,14 @@ const availableAssignees = computed(() => {
   return Array.from(assigneeSet).sort()
 })
 
-// Available epics for parent selector (only non-closed epics)
-const availableEpics = computed(() => {
-  return issues.value
-    .filter(issue => issue.type === 'epic' && issue.status !== 'closed')
-    .map(issue => ({ id: issue.id, title: issue.title }))
-})
-
 // In-progress issues for dashboard sidebar
 const inProgressIssues = computed(() => {
   return issues.value.filter(issue => issue.status === 'in_progress')
 })
 
 // Pinned issues
-const { pinnedIssueIds, pinnedSortMode, isPinned, togglePin, reorderPinned, toggleSortMode: togglePinnedSort, getPinnedIssues } = usePinnedIssues()
+const { pinnedIssueIds, pinnedSortMode, togglePin, reorderPinned, toggleSortMode: togglePinnedSort, getPinnedIssues } = usePinnedIssues()
 const pinnedIssuesList = computed(() => getPinnedIssues(issues.value))
-
-// Default parent for new issues (set when creating child from epic)
-const defaultParent = ref<string | undefined>(undefined)
-
-const handleCreateChild = (parentId: string) => {
-  defaultParent.value = parentId
-  selectIssue(null)
-  isCreatingNew.value = true
-  isEditMode.value = true
-  isRightSidebarOpen.value = true
-}
 
 const handleRemoveLabelFilter = (label: string) => {
   toggleLabelFilter(label)
@@ -742,18 +576,6 @@ const handleIssuesViewSelect = (view: IssuesView) => {
 
 const activeViewMeta = computed(() => issuesViewMeta[activeIssuesView.value])
 
-const headerTitle = computed(() => {
-  if (isCreatingNew.value) return 'New issue'
-  if (isEditMode.value) return selectedIssue.value?.id ? `Editing ${selectedIssue.value.id}` : 'Editing issue'
-  return activeViewMeta.value.label
-})
-
-const headerSubtitle = computed(() => {
-  if (isCreatingNew.value) return 'Capture the work without leaving the new sidebar shell.'
-  if (isEditMode.value) return 'Update issue details while keeping the surrounding context close.'
-  return activeViewMeta.value.description
-})
-
 const sidebarProviderStyle = computed<Record<string, string>>(() => ({
   '--sidebar-width': `${leftSidebarWidth.value}px`,
   '--sidebar-width-icon': '3.5rem',
@@ -780,7 +602,6 @@ watch(
     @update:open="isLeftSidebarOpen = $event"
   >
     <AppSidebar
-      v-if="!(isEditMode || isCreatingNew)"
       ref="appSidebarRef"
       :active-view="activeIssuesView"
       :show-onboarding="showOnboarding"
@@ -804,10 +625,8 @@ watch(
 
     <SidebarInset class="min-w-0 bg-background">
       <header class="flex h-16 shrink-0 items-center gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur rounded-t">
-        <template v-if="!(isEditMode || isCreatingNew)">
-          <SidebarTrigger class="-ml-1" />
-          <Separator orientation="vertical" class="mr-1 h-4" />
-        </template>
+        <SidebarTrigger class="-ml-1" />
+        <Separator orientation="vertical" class="mr-1 h-4" />
 
         <div class="min-w-0">
           <Breadcrumb>
@@ -817,30 +636,23 @@ watch(
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>{{ headerTitle }}</BreadcrumbPage>
+                <BreadcrumbPage>{{ activeViewMeta.label }}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
           <p class="truncate text-xs text-muted-foreground">
-            {{ headerSubtitle }}
+            {{ activeViewMeta.description }}
           </p>
         </div>
 
         <div v-if="!showOnboarding" class="ml-auto hidden items-center gap-3 text-xs text-muted-foreground md:flex">
           <span>{{ filteredIssues.length }} issue{{ filteredIssues.length === 1 ? '' : 's' }}</span>
-          <span v-if="selectedIssue" class="rounded-full border border-border px-2 py-1 font-medium text-foreground">
-            {{ selectedIssue.id }}
-          </span>
         </div>
       </header>
 
       <div id="zoomable-content" class="flex-1 min-h-0 overflow-hidden">
         <div class="flex h-full overflow-hidden">
-          <!-- Center - Issues List -->
-          <main
-            v-show="!(isEditMode || isCreatingNew)"
-            class="flex-1 flex flex-col overflow-hidden min-w-0"
-          >
+          <main class="flex-1 flex flex-col overflow-hidden min-w-0">
         <!-- Onboarding: Prerequisites Card -->
         <PrerequisitesCard v-if="showOnboarding" @browse="openFolderPicker" />
 
@@ -921,121 +733,6 @@ watch(
           </div>
         </template>
           </main>
-
-          <!-- Right Sidebar - Details (hidden when no selection and not in edit mode) -->
-          <aside
-            v-if="selectedIssue || isEditMode || isCreatingNew"
-            class="bg-card flex flex-col relative overflow-hidden"
-            :class="[
-              { 'transition-all duration-300': !isResizing && !(isEditMode || isCreatingNew) },
-              { 'border-l border-border': !(isEditMode || isCreatingNew) },
-              { 'w-full lg:w-1/2 lg:min-w-2xl mx-auto my-4 border border-border rounded-lg': isEditMode || isCreatingNew }
-            ]"
-            :style="(isEditMode || isCreatingNew) ? {} : (isRightSidebarOpen ? { width: `${rightSidebarWidth}px` } : { width: '48px' })"
-          >
-        <!-- Resize handle -->
-            <div
-              v-if="isRightSidebarOpen && !(isEditMode || isCreatingNew)"
-              class="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 transition-colors z-10"
-              @mousedown="startResizeRight"
-            />
-        <!-- Sidebar toggle -->
-            <div
-              v-show="!(isEditMode || isCreatingNew)"
-              class="p-2 border-b border-border flex items-center"
-              :class="isRightSidebarOpen ? 'justify-between' : 'justify-center'"
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                class="h-8 w-8"
-                @click="isRightSidebarOpen = !isRightSidebarOpen"
-              >
-                <svg
-                  class="w-4 h-4 transition-transform"
-                  :class="{ 'rotate-180': isRightSidebarOpen }"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </Button>
-              <span v-if="isRightSidebarOpen" class="text-sm font-medium px-2">Details</span>
-            </div>
-
-        <!-- Sidebar content -->
-            <template v-if="isRightSidebarOpen">
-          <!-- Fixed header for issue preview -->
-              <IssueDetailHeader
-                v-if="selectedIssue && !isEditMode && !isCreatingNew"
-                :selected-issue="selectedIssue"
-                :is-pinned="isPinned(selectedIssue.id)"
-                @edit="handleEditIssue"
-                @reopen="handleReopenIssue"
-                @close="handleCloseIssue"
-                @delete="handleDeleteIssue"
-                @toggle-pin="togglePin(selectedIssue.id)"
-              />
-
-          <!-- Form mode: form gère son propre scroll -->
-              <div v-if="isEditMode || isCreatingNew" class="flex-1 min-h-0 p-4 overflow-hidden">
-                <IssueForm
-                  :issue="isCreatingNew ? null : selectedIssue"
-                  :is-new="isCreatingNew"
-                  :is-saving="isUpdating"
-                  :available-epics="availableEpics"
-                  :available-labels="availableLabels"
-                  :default-parent="defaultParent"
-                  :dot-notation-parent="bdDotNotationParent"
-                  @save="handleSaveIssue"
-                  @cancel="handleCancelEdit"
-                />
-              </div>
-
-          <!-- Preview mode: ScrollArea pour le contenu -->
-              <ScrollArea v-else class="flex-1 min-h-0">
-                <div class="p-4">
-                  <div v-if="selectedIssue">
-                    <IssuePreview
-                      :issue="selectedIssue"
-                      :readonly="selectedIssue.status === 'closed'"
-                      :available-issues="availableIssuesForDeps"
-                      @navigate-to-issue="handleNavigateToIssue"
-                      @attach-image="handleAttachImage"
-                      @detach-image="confirmDetachImage"
-                      @create-child="handleCreateChild"
-                      @open-add-blocker="openAddBlockerDialog"
-                      @remove-dependency="confirmRemoveDependency"
-                      @open-add-relation="openAddRelationDialog"
-                      @remove-relation="confirmRemoveRelation"
-                    />
-                    <CommentSection
-                      class="mt-3"
-                      :comments="selectedIssue.comments || []"
-                      :readonly="selectedIssue.status === 'closed'"
-                      @add-comment="handleAddComment"
-                    />
-                  </div>
-
-                  <div v-else class="text-center text-muted-foreground py-8">
-                    Select an issue to view details
-                  </div>
-                </div>
-              </ScrollArea>
-            </template>
-
-            <!-- Collapsed state icon -->
-            <div v-else class="flex-1 flex flex-col items-center pt-4 gap-4">
-              <svg class="w-5 h-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
-            </div>
-          </aside>
         </div>
       </div>
     </SidebarInset>
