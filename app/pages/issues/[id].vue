@@ -293,7 +293,7 @@ onMounted(async () => {
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
               <BreadcrumbItem>
-                <Button variant="ghost" size="sm" class="h-auto px-0 text-muted-foreground hover:text-foreground" @click="goBackToList">
+                <Button variant="ghost" size="sm" @click="goBackToList">
                   Issues
                 </Button>
               </BreadcrumbItem>

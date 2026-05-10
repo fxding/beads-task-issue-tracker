@@ -173,9 +173,8 @@ const handleFilterClick = (filter: FilterType) => {
 
     <Button
       v-if="hasSelection"
-      variant="outline"
-      size="icon"
-      class="h-8 w-8 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+      variant="destructive"
+      size="icon-sm"
       @click="$emit('delete')"
     >
       <svg
@@ -199,7 +198,7 @@ const handleFilterClick = (filter: FilterType) => {
       @reset="$emit('resetColumns')"
     />
 
-    <Button size="sm" class="h-8 text-xs" @click="$emit('add')">
+    <Button size="sm" @click="$emit('add')">
       <svg
         class="w-3.5 h-3.5 mr-1"
         viewBox="0 0 24 24"

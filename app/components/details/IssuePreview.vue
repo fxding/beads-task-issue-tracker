@@ -330,7 +330,6 @@ const formatEstimate = (minutes: number) => {
           type="button"
           variant="outline"
           size="sm"
-          class="h-5 px-1.5 text-[10px]"
           @click="attachFile"
         >
           <ImageIcon class="w-3 h-3 mr-1" />
@@ -463,7 +462,6 @@ const formatEstimate = (minutes: number) => {
           type="button"
           variant="outline"
           size="sm"
-          class="h-5 px-1.5 text-[10px]"
           @click="emit('create-child', issue.id)"
         >
           <Plus class="w-3 h-3 mr-1" />
@@ -590,7 +588,6 @@ const formatEstimate = (minutes: number) => {
           type="button"
           variant="outline"
           size="sm"
-          class="h-5 px-1.5 text-[10px]"
           @click="emit('open-add-blocker', issue.id)"
         >
           <Plus class="w-3 h-3 mr-1" />
@@ -672,7 +669,6 @@ const formatEstimate = (minutes: number) => {
           type="button"
           variant="outline"
           size="sm"
-          class="h-5 px-1.5 text-[10px]"
           @click="emit('open-add-relation', issue.id)"
         >
           <Plus class="w-3 h-3 mr-1" />

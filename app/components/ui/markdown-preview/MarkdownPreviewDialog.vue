@@ -334,10 +334,9 @@ onUnmounted(() => {
         <div class="ml-auto mr-8 flex items-center gap-1.5">
           <!-- Search toggle button -->
           <Button
-            variant="outline"
+            :variant="isSearchOpen ? 'secondary' : 'outline'"
             size="sm"
             class="h-7 w-7 p-0"
-            :class="{ 'bg-accent': isSearchOpen }"
             @click="toggleSearch"
           >
             <Search class="w-3.5 h-3.5" />

@@ -37,10 +37,8 @@ defineEmits<{
       <div class="flex items-center gap-1">
         <!-- Pin/unpin toggle -->
         <Button
-          variant="outline"
+          :variant="isPinned ? 'secondary' : 'outline'"
           size="sm"
-          class="h-7 text-xs px-2"
-          :class="isPinned ? 'bg-secondary text-secondary-foreground' : ''"
           @click="$emit('toggle-pin')"
         >
           <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" :fill="isPinned ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -49,7 +47,7 @@ defineEmits<{
           {{ isPinned ? 'Unpin' : 'Pin' }}
         </Button>
         <!-- Edit button: only when not closed -->
-        <Button v-if="selectedIssue.status !== 'closed'" size="sm" class="h-7 text-xs px-2" @click="$emit('edit')">
+        <Button v-if="selectedIssue.status !== 'closed'" size="sm" @click="$emit('edit')">
           <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -60,7 +58,6 @@ defineEmits<{
         <Button
           v-if="selectedIssue.status === 'closed'"
           size="sm"
-          class="h-7 text-xs px-2"
           @click="$emit('reopen')"
         >
           <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -74,7 +71,6 @@ defineEmits<{
           v-if="selectedIssue.status !== 'closed'"
           variant="outline"
           size="sm"
-          class="h-7 text-xs px-2"
           @click="$emit('close')"
         >
           <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -84,9 +80,8 @@ defineEmits<{
         </Button>
       </div>
       <Button
-        variant="outline"
+        variant="destructive"
         size="sm"
-        class="h-7 text-xs px-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
         @click="$emit('delete')"
       >
         <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

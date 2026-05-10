@@ -145,7 +145,7 @@ const typeLabels: Record<IssueType, string> = {
         </svg>
       </div>
 
-      <Button variant="ghost" size="sm" class="h-5 px-1.5 text-[10px]" @click="$emit('clearAll')">
+      <Button variant="ghost" size="sm" @click="$emit('clearAll')">
         Clear
       </Button>
     </div>
@@ -225,7 +225,7 @@ const typeLabels: Record<IssueType, string> = {
         </svg>
       </div>
 
-      <Button variant="ghost" size="sm" class="h-5 px-1.5 text-[10px]" @click="clearAllExclusions">
+      <Button variant="ghost" size="sm" @click="clearAllExclusions">
         Clear
       </Button>
     </div>

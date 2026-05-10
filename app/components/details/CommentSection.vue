@@ -123,7 +123,7 @@ const handleSubmit = () => {
           class="text-xs"
         />
         <div class="flex justify-end">
-          <Button type="submit" size="sm" class="h-7 text-xs" :disabled="!newComment.trim()">
+          <Button type="submit" size="sm" :disabled="!newComment.trim()">
             Add Comment
           </Button>
         </div>

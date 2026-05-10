@@ -37,7 +37,7 @@ const handleToggle = (columnId: string, checked: boolean) => {
     <DropdownMenu>
       <TooltipTrigger as-child>
         <DropdownMenuTrigger as-child>
-          <Button variant="outline" size="icon" class="h-8 w-8">
+          <Button variant="outline" size="icon-sm">
             <svg
               class="w-3.5 h-3.5"
               viewBox="0 0 24 24"
@@ -69,7 +69,7 @@ const handleToggle = (columnId: string, checked: boolean) => {
       </DropdownMenuCheckboxItem>
       <DropdownMenuSeparator />
       <div class="p-1">
-        <Button variant="ghost" size="sm" class="w-full text-xs h-7 justify-start" @click="emit('reset')">
+        <Button variant="ghost" size="sm" class="w-full h-7 justify-start text-xs" @click="emit('reset')">
           Reset to defaults
         </Button>
       </div>

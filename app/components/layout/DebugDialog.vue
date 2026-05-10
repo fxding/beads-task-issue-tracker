@@ -144,9 +144,8 @@ onUnmounted(() => {
 
         <div class="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
-            class="text-destructive hover:bg-destructive hover:text-destructive-foreground"
             :disabled="isLoading"
             @click="handleClearLogs"
           >

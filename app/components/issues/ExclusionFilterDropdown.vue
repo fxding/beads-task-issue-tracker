@@ -87,7 +87,7 @@ const isAssigneeExcluded = (assignee: string) => exclusions.value.assignee.inclu
     <DropdownMenu :open="open" :modal="false">
       <TooltipTrigger as-child>
         <DropdownMenuTrigger as-child>
-          <Button variant="outline" size="icon" class="h-8 w-8 relative">
+          <Button variant="outline" size="icon-sm" class="relative">
             <!-- Filter/funnel icon -->
             <svg
               class="w-3.5 h-3.5"
@@ -288,7 +288,7 @@ const isAssigneeExcluded = (assignee: string) => exclusions.value.assignee.inclu
         <template v-if="activeCount > 0">
           <DropdownMenuSeparator />
           <div class="p-1">
-            <Button variant="ghost" size="sm" class="w-full text-xs h-7 justify-start" @click="clearAll">
+            <Button variant="ghost" size="sm" class="w-full h-7 justify-start text-xs" @click="clearAll">
               Clear all exclusions
             </Button>
           </div>

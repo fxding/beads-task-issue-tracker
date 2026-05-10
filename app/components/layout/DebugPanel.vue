@@ -258,28 +258,25 @@ onUnmounted(() => {
           {{ isAutoRefresh ? 'Live' : 'Paused' }}
         </Button>
 
-        <Button variant="outline" size="sm" class="h-7 px-2" :disabled="isAutoRefresh" @click="fetchLogs">
+        <Button variant="outline" size="sm" :disabled="isAutoRefresh" @click="fetchLogs">
           Refresh
         </Button>
 
-        <Button variant="outline" size="sm" class="h-7 px-2" @click="scrollToBottom">
+        <Button variant="outline" size="sm" @click="scrollToBottom">
           Bottom
         </Button>
 
         <Button
-          variant="outline"
+          :variant="isVerbose ? 'secondary' : 'outline'"
           size="sm"
-          class="h-7 px-2"
-          :class="isVerbose ? 'border-amber-500 text-amber-500' : ''"
           @click="toggleVerbose"
         >
           Verbose {{ isVerbose ? 'ON' : 'OFF' }}
         </Button>
 
         <Button
-          variant="outline"
+          variant="destructive"
           size="sm"
-          class="h-7 px-2 text-destructive border-destructive/50 hover:bg-destructive hover:text-destructive-foreground"
           :disabled="isLoading"
           @click="handleClearLogs"
         >
@@ -290,7 +287,6 @@ onUnmounted(() => {
           v-if="logs"
           variant="outline"
           size="sm"
-          class="h-7 px-2"
           @click="exportLogs"
         >
           Export
@@ -300,10 +296,8 @@ onUnmounted(() => {
         <div class="w-px h-4 bg-border mx-2" />
 
         <Button
-          variant="outline"
+          :variant="isForceSyncing ? 'secondary' : 'outline'"
           size="sm"
-          class="h-7 px-2"
-          :class="isForceSyncing ? 'border-primary text-primary' : ''"
           :disabled="isForceSyncing"
           @click="forceSync"
         >
@@ -359,7 +353,7 @@ onUnmounted(() => {
         </span>
         <span class="text-muted-foreground">|</span>
         <span class="text-xs text-muted-foreground truncate max-w-[300px]">{{ logPath }}</span>
-        <Button variant="outline" size="sm" class="h-7 w-7 p-0" @click="close">
+        <Button variant="outline" size="sm" @click="close">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6 6 18" />
             <path d="m6 6 12 12" />

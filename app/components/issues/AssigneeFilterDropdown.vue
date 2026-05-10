@@ -32,7 +32,7 @@ const isSelected = (assignee: string) => props.selectedAssignees.includes(assign
     <DropdownMenu :open="open" :modal="false" @update:open="$emit('update:open', $event)">
       <TooltipTrigger as-child>
         <DropdownMenuTrigger as-child>
-          <Button variant="outline" size="sm" class="h-8 text-xs gap-1">
+          <Button variant="outline" size="sm">
             <!-- User icon -->
             <svg
               class="w-3.5 h-3.5"
