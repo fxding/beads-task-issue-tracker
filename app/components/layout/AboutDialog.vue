@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { FolderKanban } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -15,19 +16,16 @@ const appVersion = useRuntimeConfig().public.appVersion
 <template>
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-sm">
-      <DialogHeader class="items-center text-center">
-        <img
-          src="/icon.png"
-          alt="Beads Task-Issue Tracker"
-          class="w-16 h-16 mb-2"
-        />
-        <DialogTitle class="text-lg">Beads Task-Issue Tracker</DialogTitle>
-        <DialogDescription as="div" class="space-y-3 pt-2">
-          <p class="text-sm font-medium text-foreground">Version {{ appVersion }}</p>
-          <div class="text-xs text-muted-foreground space-y-1">
+      <DialogHeader class="space-y-3">
+        <div class="flex size-10 items-center justify-center rounded-lg border bg-muted/40">
+          <FolderKanban class="size-5 text-muted-foreground" />
+        </div>
+        <DialogTitle>Beads Task-Issue Tracker</DialogTitle>
+        <DialogDescription as="div" class="space-y-3">
+          <p class="text-sm text-foreground">Version {{ appVersion }}</p>
+          <div class="space-y-1 text-sm text-muted-foreground">
             <p>&copy; 2026 Laurent Chapin</p>
-            <p>Powered by beads (Steve Yegge)</p>
-            <p>Vibe coded with Claude Code</p>
+            <p>Powered by beads</p>
           </div>
         </DialogDescription>
       </DialogHeader>

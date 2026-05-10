@@ -8,6 +8,7 @@ import {
 } from '~/components/ui/dialog'
 import { Label } from '~/components/ui/label'
 import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
 import { getCliBinaryPath, setCliBinaryPath, checkExternalHealth } from '~/utils/bd-api'
 import type { ThemeDefinition } from '~/composables/useTheme'
 
@@ -101,10 +102,10 @@ async function testConnection() {
             <button
               v-for="t in themes"
               :key="t.id"
-              class="relative flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-center transition-colors"
+              class="relative flex flex-col items-center gap-1.5 rounded-lg border bg-background p-3 text-center transition-colors hover:bg-accent/40"
               :class="activeTheme === t.id
-                ? 'border-primary bg-primary/5'
-                : 'border-muted hover:border-muted-foreground/25 hover:bg-muted/50'"
+                ? 'border-ring'
+                : 'border-border'"
               @click="setTheme(t.id)"
             >
               <div class="flex items-center justify-center h-8 w-8">
@@ -128,10 +129,10 @@ async function testConnection() {
           <div class="grid grid-cols-2 gap-3">
             <!-- br option (preferred) -->
             <button
-              class="relative flex flex-col items-start gap-1.5 rounded-lg border-2 p-3 text-left transition-colors"
+              class="relative flex flex-col items-start gap-1.5 rounded-lg border bg-background p-3 text-left transition-colors hover:bg-accent/40"
               :class="selectedClient === 'br'
-                ? 'border-primary bg-primary/5'
-                : 'border-muted hover:border-muted-foreground/25 hover:bg-muted/50'"
+                ? 'border-ring'
+                : 'border-border'"
               :disabled="isSwitching"
               @click="selectClient('br')"
             >
@@ -154,10 +155,10 @@ async function testConnection() {
 
             <!-- bd option (legacy) -->
             <button
-              class="relative flex flex-col items-start gap-1.5 rounded-lg border-2 p-3 text-left transition-colors"
+              class="relative flex flex-col items-start gap-1.5 rounded-lg border bg-background p-3 text-left transition-colors hover:bg-accent/40"
               :class="selectedClient === 'bd'
-                ? 'border-primary bg-primary/5'
-                : 'border-muted hover:border-muted-foreground/25 hover:bg-muted/50'"
+                ? 'border-ring'
+                : 'border-border'"
               :disabled="isSwitching"
               @click="selectClient('bd')"
             >
@@ -202,11 +203,11 @@ async function testConnection() {
           <!-- URL input + Test connection (visible only when probe enabled) -->
           <div v-if="probeEnabled" class="space-y-2">
             <div class="flex gap-2">
-              <input
+              <Input
                 v-model="dataSourceUrl"
                 type="text"
                 placeholder="http://localhost:9100"
-                class="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-mono shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="flex-1 font-mono"
               />
               <Button
                 size="sm"
@@ -223,16 +224,16 @@ async function testConnection() {
             </div>
 
             <!-- Health check result -->
-            <div v-if="healthResult !== null" class="flex items-center gap-1.5 text-xs">
-              <svg v-if="healthResult" class="w-3.5 h-3.5 text-green-600 dark:text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div v-if="healthResult !== null" class="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <svg v-if="healthResult" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <svg v-else class="w-3.5 h-3.5 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg v-else class="h-3.5 w-3.5 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="15" y1="9" x2="9" y2="15" />
                 <line x1="9" y1="9" x2="15" y2="15" />
               </svg>
-              <span :class="healthResult ? 'text-green-600 dark:text-green-400' : 'text-destructive'">
+              <span :class="healthResult ? '' : 'text-destructive'">
                 {{ healthResult ? 'Connected' : 'Disconnected' }}
               </span>
             </div>
@@ -249,7 +250,11 @@ async function testConnection() {
         </div>
 
         <!-- Result -->
-        <div v-if="switchResult" class="flex items-start gap-2 p-2 rounded-md text-sm" :class="switchResult.success ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-destructive/10 text-destructive'">
+        <div
+          v-if="switchResult"
+          class="flex items-start gap-2 rounded-md border p-2 text-sm"
+          :class="switchResult.success ? 'border-border text-muted-foreground' : 'border-destructive/30 bg-destructive/10 text-destructive'"
+        >
           <svg v-if="switchResult.success" class="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="20 6 9 17 4 12" />
           </svg>

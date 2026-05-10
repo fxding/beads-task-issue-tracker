@@ -159,7 +159,7 @@ defineExpose({
     <div class="relative flex h-full w-full flex-col">
       <SidebarHeader class="border-sidebar-border/70 border-b px-2 py-3">
         <div class="flex items-center gap-3 px-2">
-          <div class="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+          <div class="flex size-10 items-center justify-center rounded-lg border bg-sidebar text-sidebar-foreground">
             <FolderKanban class="size-5" />
           </div>
           <div class="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
@@ -167,7 +167,7 @@ defineExpose({
               {{ projectName || 'Beads Task-Issue Tracker' }}
             </p>
             <p class="truncate text-xs text-sidebar-foreground/70">
-              {{ showOnboarding ? 'Choose a workspace to begin.' : 'Sidebar-07 powered issue cockpit.' }}
+              {{ showOnboarding ? 'Choose a workspace to begin.' : 'Browse issues, planning views, and project health.' }}
             </p>
           </div>
         </div>
@@ -205,7 +205,7 @@ defineExpose({
                     <Badge
                       v-if="item.badge"
                       variant="secondary"
-                      class="border-sidebar-border/80 bg-sidebar-accent text-[10px] uppercase tracking-wide"
+                      class="text-[10px] uppercase tracking-wide"
                     >
                       {{ item.badge }}
                     </Badge>
@@ -219,7 +219,7 @@ defineExpose({
         <SidebarGroup v-else class="group-data-[collapsible=icon]:hidden">
           <SidebarGroupLabel>Get Started</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div class="rounded-xl border border-dashed border-sidebar-border/70 bg-sidebar-accent/25 p-3 text-sm text-sidebar-foreground/80">
+            <div class="rounded-lg border border-dashed border-sidebar-border/70 bg-muted/40 p-3 text-sm text-sidebar-foreground/80">
               Pick a beads workspace to unlock the table, list, board, and stats views.
             </div>
           </SidebarGroupContent>
@@ -242,7 +242,7 @@ defineExpose({
 
         <div
           v-if="probeEnabled && isDev"
-          class="mt-3 flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 group-data-[collapsible=icon]:justify-center"
+          class="mt-3 flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground group-data-[collapsible=icon]:justify-center"
         >
           <Sparkles class="size-4" />
           <span class="group-data-[collapsible=icon]:hidden">Probe broadcasting enabled</span>
