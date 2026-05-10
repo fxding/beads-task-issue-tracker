@@ -399,7 +399,7 @@ onMounted(async () => {
             />
           </div>
 
-          <div v-else class="grid gap-4 pt-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <div v-else class="grid gap-4 pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
             <ScrollArea class="min-h-0 lg:max-h-[calc(100vh-12rem)]">
               <div class="space-y-3 pr-1">
                 <IssueDetailHeader
@@ -429,7 +429,7 @@ onMounted(async () => {
               </div>
             </ScrollArea>
 
-            <div class="lg:sticky lg:top-4">
+            <div class="lg:sticky lg:top-4 lg:justify-self-end lg:w-[320px]">
               <IssuePropertiesPanel
                 :issue="currentIssue"
                 :readonly="currentIssue.status === 'closed'"
