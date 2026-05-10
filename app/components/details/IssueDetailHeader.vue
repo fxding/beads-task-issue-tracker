@@ -19,7 +19,12 @@ defineEmits<{
   <div class="bg-card/90 p-4 space-y-3">
     <!-- Badges row -->
     <div class="flex items-center gap-1.5 flex-wrap">
-      <CopyableId :value="selectedIssue.id" :display-value="selectedIssue.id.includes('-') ? selectedIssue.id.slice(selectedIssue.id.lastIndexOf('-') + 1) : selectedIssue.id" />
+      <div class="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-2 py-1">
+        <span class="text-[10px] font-mono text-muted-foreground">
+          {{ selectedIssue.id.includes('-') ? selectedIssue.id.slice(selectedIssue.id.lastIndexOf('-') + 1) : selectedIssue.id }}
+        </span>
+        <CopyableId :value="selectedIssue.id" icon-only />
+      </div>
       <TypeBadge :type="selectedIssue.type" size="sm" />
       <StatusBadge :status="selectedIssue.status" size="sm" />
       <PriorityBadge :priority="selectedIssue.priority" size="sm" />
