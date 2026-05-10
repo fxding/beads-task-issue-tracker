@@ -273,19 +273,7 @@ watch(() => projects.value.length, () => {
 
 <template>
   <div class="space-y-2">
-    <!-- Action buttons -->
-    <div class="flex items-center gap-1">
-      <Button variant="outline" size="sm" class="flex-1 h-7 text-xs" @click="isPickerOpen = true">
-        <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-        </svg>
-        Select Project
-      </Button>
-
-    </div>
-
-    <!-- Projects -->
-    <div v-if="projects.length > 0" class="space-y-1">
+    <div class="space-y-1">
       <div class="flex items-center gap-2 w-full">
         <button
           class="flex items-center gap-2 text-[10px] text-muted-foreground hover:text-foreground transition-colors flex-1"
@@ -307,6 +295,25 @@ watch(() => projects.value.length, () => {
           <span class="uppercase tracking-wide">Projects</span>
           <span class="ml-auto">({{ projects.length }})</span>
         </button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="h-7 w-7 shrink-0 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                @click.stop="isPickerOpen = true"
+              >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                  <path d="M12 11v6" />
+                  <path d="M9 14h6" />
+                </svg>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Select project</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <!-- Sort mode toggle (hidden when collapsed) -->
         <template v-if="!isProjectsCollapsed">
           <TooltipProvider>
@@ -359,27 +366,44 @@ watch(() => projects.value.length, () => {
           </TooltipProvider>
         </template>
       </div>
-      <div v-show="!isProjectsCollapsed" ref="projectsListRef" class="flex flex-col gap-1 outline-none" tabindex="0" @keydown="handleProjectKeydown">
+      <div
+        v-show="!isProjectsCollapsed && projects.length === 0"
+        class="rounded-xl border border-dashed border-sidebar-border/70 bg-sidebar-accent/20 p-3 text-sm text-muted-foreground"
+      >
+        Add a project folder to populate the workspace switcher.
+      </div>
+      <div
+        v-show="!isProjectsCollapsed && projects.length > 0"
+        ref="projectsListRef"
+        class="flex flex-col gap-1 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/10 p-1 outline-none"
+        tabindex="0"
+        @keydown="handleProjectKeydown"
+      >
         <div
           v-for="proj in sortedProjects"
           :key="proj.path"
           :data-path="proj.path"
-          class="relative group rounded"
+          class="relative group rounded-md"
           :class="isProjectFocused(proj.path) ? 'bg-primary/10 ring-1 ring-inset ring-primary/40' : ''"
           @click="setProjectFocused(proj.path)"
         >
           <Button
-            :variant="beadsPath === proj.path ? 'default' : 'ghost'"
+            :variant="beadsPath === proj.path ? 'ghost' : 'ghost'"
             size="sm"
-            class="h-7 justify-start text-xs gap-0 w-full pr-6"
-            :class="{ 'opacity-50 cursor-wait': isLoading && beadsPath !== proj.path }"
+            class="h-9 justify-start text-xs gap-0 w-full rounded-md px-2 pr-7"
+            :class="[
+              beadsPath === proj.path
+                ? 'bg-sidebar-accent text-foreground font-medium shadow-none'
+                : 'text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-foreground',
+              { 'opacity-50 cursor-wait': isLoading && beadsPath !== proj.path }
+            ]"
             :disabled="isLoading"
             @click="handleSelectProject(proj.path)"
           >
             <!-- Drag handle -->
             <span
               v-if="!isLoading"
-              class="drag-handle cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-60 transition-opacity mr-1 shrink-0"
+              class="drag-handle cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-60 transition-opacity mr-2 shrink-0"
             >
               <svg class="w-2.5 h-3" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="8" cy="4" r="2" /><circle cx="16" cy="4" r="2" />
@@ -390,7 +414,7 @@ watch(() => projects.value.length, () => {
             <!-- Loading spinner for active project -->
             <svg
               v-if="isLoading && beadsPath === proj.path"
-              class="w-3 h-3 shrink-0 animate-spin mr-1"
+              class="w-3 h-3 shrink-0 animate-spin mr-2"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -402,7 +426,7 @@ watch(() => projects.value.length, () => {
             <!-- Probe expose toggle (external mode) -->
             <button
               v-if="probeEnabled"
-              class="shrink-0 mr-1 p-0 rounded transition-colors"
+              class="shrink-0 mr-2 p-0 rounded transition-colors"
               :class="isExposed(proj.path)
                 ? 'text-green-500'
                 : 'text-muted-foreground/40 hover:text-green-500'"
@@ -423,7 +447,7 @@ watch(() => projects.value.length, () => {
             <!-- Folder icon (when probe disabled) -->
             <svg
               v-else
-              class="w-3 h-3 shrink-0 mr-1 text-muted-foreground"
+              class="w-3 h-3 shrink-0 mr-2 text-muted-foreground"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -438,7 +462,7 @@ watch(() => projects.value.length, () => {
           <!-- Remove button - outside Button to avoid click capture -->
           <button
             v-if="!isLoading"
-            class="absolute right-0.5 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+            class="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
             @click.stop.prevent="handleRemoveProject(proj.path, $event)"
           >
             <svg
