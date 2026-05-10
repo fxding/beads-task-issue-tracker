@@ -803,7 +803,7 @@ watch(
     />
 
     <SidebarInset class="min-w-0 bg-background">
-      <header class="flex h-16 shrink-0 items-center gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur">
+      <header class="flex h-16 shrink-0 items-center gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur rounded-t">
         <template v-if="!(isEditMode || isCreatingNew)">
           <SidebarTrigger class="-ml-1" />
           <Separator orientation="vertical" class="mr-1 h-4" />
@@ -834,8 +834,8 @@ watch(
         </div>
       </header>
 
-      <div id="zoomable-content" class="flex-1 min-h-0 overflow-hidden p-3 pt-0">
-        <div class="flex h-full overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
+      <div id="zoomable-content" class="flex-1 min-h-0 overflow-hidden">
+        <div class="flex h-full overflow-hidden">
           <!-- Center - Issues List -->
           <main
             v-show="!(isEditMode || isCreatingNew)"

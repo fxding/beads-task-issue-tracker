@@ -365,10 +365,10 @@ const { focusedId, setFocused, handleKeydown, isFocused } = useKeyboardNavigatio
 </script>
 
 <template>
-  <div class="h-full rounded border border-border overflow-auto outline-none" tabindex="0" @keydown="handleKeydown" @click.self="$emit('deselect')">
+  <div class="h-full overflow-auto outline-none" tabindex="0" @keydown="handleKeydown" @click.self="$emit('deselect')">
     <Table @click.self="$emit('deselect')">
       <TableHeader>
-        <TableRow class="bg-secondary/30 hover:bg-secondary/30">
+        <TableRow>
           <TableHead v-if="multiSelectMode" class="w-10 px-2 !py-1.5">
             <button
               class="flex items-center justify-center w-4 h-4 rounded border transition-colors"

@@ -97,7 +97,7 @@ const handleSort = (field: string | null, direction: 'asc' | 'desc') => {
     />
   </div>
 
-  <div class="flex-1 overflow-auto p-4">
+  <div class="flex-1 overflow-auto">
     <IssueTable
       v-model:selected-ids="selectedIds"
       :issues="issues"
