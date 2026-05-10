@@ -213,7 +213,7 @@ const attachFile = async () => {
     <div class="space-y-3 pb-3 border-b border-border">
       <div class="flex items-center gap-4">
         <div class="flex items-center gap-1.5">
-          <Label for="type" class="text-[10px] uppercase tracking-wide text-sky-400 whitespace-nowrap">Type</Label>
+          <Label for="type" class="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Type</Label>
           <Select v-model="form.type">
             <SelectTrigger class="h-7 text-xs w-28">
               <SelectValue placeholder="Type" />
@@ -232,7 +232,7 @@ const attachFile = async () => {
         </div>
 
         <div class="flex items-center gap-1.5">
-          <Label for="status" class="text-[10px] uppercase tracking-wide text-sky-400 whitespace-nowrap">Status</Label>
+          <Label for="status" class="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Status</Label>
           <Select v-model="form.status" :disabled="isNew">
             <SelectTrigger class="h-7 text-xs w-32">
               <SelectValue placeholder="Status" />
@@ -251,7 +251,7 @@ const attachFile = async () => {
         </div>
 
         <div class="flex items-center gap-1.5">
-          <Label for="priority" class="text-[10px] uppercase tracking-wide text-sky-400 whitespace-nowrap">Priority</Label>
+          <Label for="priority" class="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Priority</Label>
           <Select v-model="form.priority">
             <SelectTrigger class="h-7 text-xs w-36">
               <SelectValue placeholder="Priority" />
@@ -270,7 +270,7 @@ const attachFile = async () => {
         </div>
 
         <div v-if="filteredEpics.length > 0 && form.type !== 'epic' && !dotNotationParent" class="flex items-center gap-1.5">
-          <Label for="parent" class="text-[10px] uppercase tracking-wide text-sky-400 whitespace-nowrap">Parent</Label>
+          <Label for="parent" class="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Parent</Label>
           <Select v-model="parentSelectValue">
             <SelectTrigger class="h-7 text-xs w-40">
               <SelectValue placeholder="No parent" />
@@ -293,7 +293,7 @@ const attachFile = async () => {
       </div>
 
       <div class="space-y-1">
-        <Label for="title" class="text-[10px] uppercase tracking-wide text-sky-400">Title</Label>
+        <Label for="title" class="text-[10px] uppercase tracking-wide text-muted-foreground">Title</Label>
         <Input
           id="title"
           v-model="form.title"
@@ -308,7 +308,7 @@ const attachFile = async () => {
     <ScrollArea class="flex-1 min-h-0">
       <div class="space-y-3 py-3">
         <div class="space-y-1">
-          <Label for="description" class="text-[10px] uppercase tracking-wide text-sky-400">Description</Label>
+          <Label for="description" class="text-[10px] uppercase tracking-wide text-muted-foreground">Description</Label>
           <Textarea
             id="description"
             v-model="form.description"
@@ -319,7 +319,7 @@ const attachFile = async () => {
         </div>
 
         <div class="space-y-1">
-          <Label for="assignee" class="text-[10px] uppercase tracking-wide text-sky-400">Assignee</Label>
+          <Label for="assignee" class="text-[10px] uppercase tracking-wide text-muted-foreground">Assignee</Label>
           <Input
             id="assignee"
             v-model="form.assignee"
@@ -329,7 +329,7 @@ const attachFile = async () => {
         </div>
 
         <div class="space-y-1">
-          <Label for="labels" class="text-[10px] uppercase tracking-wide text-sky-400">Labels</Label>
+          <Label for="labels" class="text-[10px] uppercase tracking-wide text-muted-foreground">Labels</Label>
           <LabelMultiSelect
             v-model="form.labels"
             :available-labels="availableLabels || []"
@@ -338,12 +338,12 @@ const attachFile = async () => {
 
         <div class="space-y-1">
           <div class="flex items-center gap-2">
-            <Label for="externalRef" class="text-[10px] uppercase tracking-wide text-sky-400">External Reference</Label>
+            <Label for="externalRef" class="text-[10px] uppercase tracking-wide text-muted-foreground">External Reference</Label>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              class="h-5 px-1.5 text-[10px] hover:bg-sky-500/20 hover:border-sky-500 hover:text-sky-400 active:scale-95 active:bg-sky-500/30 transition-all"
+              class="h-5 px-1.5 text-[10px]"
               @click="attachFile"
             >
               <ImageIcon class="w-3 h-3 mr-1" />
@@ -360,7 +360,7 @@ const attachFile = async () => {
         </div>
 
         <div class="space-y-1">
-          <Label for="specId" class="text-[10px] uppercase tracking-wide text-sky-400">Spec ID</Label>
+          <Label for="specId" class="text-[10px] uppercase tracking-wide text-muted-foreground">Spec ID</Label>
           <Input
             id="specId"
             v-model="form.specId"
@@ -370,7 +370,7 @@ const attachFile = async () => {
         </div>
 
         <div class="space-y-1">
-          <Label for="estimateMinutes" class="text-[10px] uppercase tracking-wide text-sky-400">Estimate (minutes)</Label>
+          <Label for="estimateMinutes" class="text-[10px] uppercase tracking-wide text-muted-foreground">Estimate (minutes)</Label>
           <Input
             id="estimateMinutes"
             v-model.number="form.estimateMinutes"
@@ -382,7 +382,7 @@ const attachFile = async () => {
         </div>
 
         <div class="space-y-1">
-          <Label for="designNotes" class="text-[10px] uppercase tracking-wide text-sky-400">Design Notes</Label>
+          <Label for="designNotes" class="text-[10px] uppercase tracking-wide text-muted-foreground">Design Notes</Label>
           <Textarea
             id="designNotes"
             v-model="form.designNotes"
@@ -393,7 +393,7 @@ const attachFile = async () => {
         </div>
 
         <div class="space-y-1">
-          <Label for="acceptanceCriteria" class="text-[10px] uppercase tracking-wide text-sky-400">Acceptance Criteria</Label>
+          <Label for="acceptanceCriteria" class="text-[10px] uppercase tracking-wide text-muted-foreground">Acceptance Criteria</Label>
           <Textarea
             id="acceptanceCriteria"
             v-model="form.acceptanceCriteria"
@@ -404,7 +404,7 @@ const attachFile = async () => {
         </div>
 
         <div class="space-y-1">
-          <Label for="workingNotes" class="text-[10px] uppercase tracking-wide text-sky-400">Working Notes</Label>
+          <Label for="workingNotes" class="text-[10px] uppercase tracking-wide text-muted-foreground">Working Notes</Label>
           <Textarea
             id="workingNotes"
             v-model="form.workingNotes"

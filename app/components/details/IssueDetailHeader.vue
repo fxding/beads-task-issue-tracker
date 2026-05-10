@@ -40,7 +40,7 @@ defineEmits<{
           variant="outline"
           size="sm"
           class="h-7 text-xs px-2"
-          :class="isPinned ? 'text-amber-500 border-amber-500/50 hover:text-amber-600' : ''"
+          :class="isPinned ? 'bg-secondary text-secondary-foreground' : ''"
           @click="$emit('toggle-pin')"
         >
           <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" :fill="isPinned ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

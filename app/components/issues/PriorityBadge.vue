@@ -10,11 +10,11 @@ const props = defineProps<{
 const { showBadgeIcons } = useTheme()
 
 const priorityConfig: Record<IssuePriority, { label: string; class: string }> = {
-  p0: { label: 'P0', class: 'badge-gradient bg-priority-p0-gradient text-white' },
-  p1: { label: 'P1', class: 'badge-gradient bg-priority-p1-gradient text-white' },
-  p2: { label: 'P2', class: 'badge-gradient bg-priority-p2-gradient text-white' },
-  p3: { label: 'P3', class: 'badge-gradient bg-priority-p3-gradient text-white' },
-  p4: { label: 'P4', class: 'badge-gradient bg-priority-p4-gradient text-white' },
+  p0: { label: 'P0', class: 'border-destructive/30 bg-destructive/10 text-destructive' },
+  p1: { label: 'P1', class: 'border-destructive/30 bg-destructive/10 text-destructive' },
+  p2: { label: 'P2', class: 'border-transparent bg-secondary text-secondary-foreground' },
+  p3: { label: 'P3', class: 'border-transparent bg-muted text-muted-foreground' },
+  p4: { label: 'P4', class: 'border-transparent bg-muted text-muted-foreground' },
 }
 
 // SVG icon paths for each priority (12x12 viewBox)
@@ -30,7 +30,7 @@ const config = computed(() => priorityConfig[props.priority] || priorityConfig.p
 </script>
 
 <template>
-  <Badge :class="[config.class, size === 'sm' ? 'text-[10px] px-1.5 py-0' : '']" variant="secondary">
+  <Badge :class="[config.class, size === 'sm' ? 'px-1.5 py-0 text-[10px]' : '']" variant="outline">
     <span v-if="showBadgeIcons" class="inline-flex items-center mr-1">
       <svg class="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path :d="priorityIcons[priority] || priorityIcons.p3" />

@@ -10,14 +10,14 @@ const props = defineProps<{
 const { showBadgeIcons } = useTheme()
 
 const statusConfig: Record<IssueStatus, { label: string; class: string }> = {
-  open: { label: 'OPEN', class: 'badge-gradient bg-status-open-gradient text-white' },
-  in_progress: { label: 'IN PROGRESS', class: 'badge-gradient bg-status-in-progress-gradient text-white' },
-  blocked: { label: 'BLOCKED', class: 'badge-gradient bg-status-blocked-gradient text-white' },
-  closed: { label: 'CLOSED', class: 'badge-gradient bg-status-closed-gradient text-white' },
-  deferred: { label: 'DEFERRED', class: 'badge-gradient bg-status-deferred-gradient text-white' },
-  tombstone: { label: 'DELETED', class: 'badge-gradient bg-status-tombstone-gradient text-white' },
-  pinned: { label: 'PINNED', class: 'badge-gradient bg-status-pinned-gradient text-white' },
-  hooked: { label: 'HOOKED', class: 'badge-gradient bg-status-hooked-gradient text-white' },
+  open: { label: 'OPEN', class: 'border-transparent bg-secondary text-secondary-foreground' },
+  in_progress: { label: 'IN PROGRESS', class: 'border-transparent bg-secondary text-secondary-foreground' },
+  blocked: { label: 'BLOCKED', class: 'border-destructive/30 bg-destructive/10 text-destructive' },
+  closed: { label: 'CLOSED', class: 'border-transparent bg-muted text-muted-foreground' },
+  deferred: { label: 'DEFERRED', class: 'border-transparent bg-muted text-muted-foreground' },
+  tombstone: { label: 'DELETED', class: 'border-transparent bg-muted text-muted-foreground' },
+  pinned: { label: 'PINNED', class: 'border-transparent bg-secondary text-secondary-foreground' },
+  hooked: { label: 'HOOKED', class: 'border-transparent bg-secondary text-secondary-foreground' },
 }
 
 // SVG icon paths for each status (12x12 viewBox)
@@ -32,7 +32,7 @@ const config = computed(() => statusConfig[props.status] || statusConfig.open)
 </script>
 
 <template>
-  <Badge :class="[config.class, size === 'sm' ? 'text-[10px] px-1.5 py-0' : '']" variant="secondary">
+  <Badge :class="[config.class, size === 'sm' ? 'px-1.5 py-0 text-[10px]' : '']" variant="outline">
     <span v-if="showBadgeIcons && statusIcons[status]" class="inline-flex items-center mr-1">
       <svg class="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
         <path :d="statusIcons[status]" />

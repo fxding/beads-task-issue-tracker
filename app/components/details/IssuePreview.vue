@@ -11,9 +11,6 @@ import ImageThumbnail from '~/components/ui/image-preview/ImageThumbnail.vue'
 import { extractNonImageRefs, isUrl } from '~/utils/markdown'
 import type { AttachmentFile } from '~/composables/useAttachments'
 
-const { currentTheme } = useTheme()
-const isNeon = computed(() => currentTheme.value.id === 'neon')
-
 const props = defineProps<{
   issue: Issue
   readonly?: boolean
@@ -150,57 +147,15 @@ const getIssueTitle = (id: string) => {
   return props.availableIssues?.find(i => i.id === id)?.title
 }
 
-const depBorderColor = (id: string) => {
-  const issue = props.availableIssues?.find(i => i.id === id)
-  if (!issue?.priority) return 'border-muted-foreground/50'
-  const colors: Record<string, string> = {
-    p0: 'border-[#ef4444]',
-    p1: 'border-[#ef4444]',
-    p2: 'border-[#f59e0b]',
-    p3: 'border-[#b8860b]',
-    p4: 'border-[#6b7280]',
-  }
-  return colors[issue.priority] || 'border-muted-foreground/50'
-}
-
 const depTextColor = (priority?: string) => {
-  if (!priority) return 'text-sky-400'
-  if (isNeon.value) {
-    const neonColors: Record<string, string> = {
-      p0: 'text-[#ff3366]',
-      p1: 'text-[#ff3366]',
-      p2: 'text-[#ffaa00]',
-      p3: 'text-[#e0a500]',
-      p4: 'text-[#8892a0]',
-    }
-    return neonColors[priority] || 'text-[#00d4ff]'
-  }
   const colors: Record<string, string> = {
-    p0: 'text-[#ef4444]',
-    p1: 'text-[#ef4444]',
-    p2: 'text-[#f59e0b]',
-    p3: 'text-[#b8860b]',
-    p4: 'text-[#6b7280]',
+    p0: 'text-destructive',
+    p1: 'text-destructive',
+    p2: 'text-foreground',
+    p3: 'text-muted-foreground',
+    p4: 'text-muted-foreground',
   }
-  return colors[priority] || 'text-sky-400'
-}
-
-// Neon inline style for dep/relation items: transparent bg + inset glow, no border
-const depNeonStyle = (priority?: string) => {
-  if (!isNeon.value) return {}
-  const colorMap: Record<string, string> = {
-    p0: '255, 51, 102',
-    p1: '255, 51, 102',
-    p2: '255, 170, 0',
-    p3: '224, 165, 0',
-    p4: '136, 146, 160',
-  }
-  const rgb = (priority && colorMap[priority]) || '0, 212, 255'
-  return {
-    background: `rgba(${rgb}, 0.08)`,
-    border: 'none',
-    boxShadow: `inset 0 0 10px rgba(${rgb}, 0.06)`,
-  }
+  return colors[priority || ''] || 'text-foreground'
 }
 
 const handleRemoveDependency = (id: string, section: 'blockedBy' | 'blocks') => {
@@ -318,20 +273,6 @@ const groupedRelations = computed(() => {
   }))
 })
 
-const relationBorderColor = (rel: { id: string; priority: string }) => {
-  // Use rel.priority if available, otherwise lookup from availableIssues
-  const priority = rel.priority || props.availableIssues?.find(i => i.id === rel.id)?.priority
-  if (!priority) return 'border-muted-foreground/50'
-  const colors: Record<string, string> = {
-    p0: 'border-[#ef4444]',
-    p1: 'border-[#ef4444]',
-    p2: 'border-[#f59e0b]',
-    p3: 'border-[#b8860b]',
-    p4: 'border-[#6b7280]',
-  }
-  return colors[priority] || 'border-muted-foreground/50'
-}
-
 const formatMetadata = (raw: string): string => {
   try {
     return JSON.stringify(JSON.parse(raw), null, 2)
@@ -389,7 +330,7 @@ const formatEstimate = (minutes: number) => {
           type="button"
           variant="outline"
           size="sm"
-          class="h-5 px-1.5 text-[10px] hover:bg-sky-500/20 hover:border-sky-500 hover:text-sky-400 active:scale-95 active:bg-sky-500/30 transition-all"
+          class="h-5 px-1.5 text-[10px]"
           @click="attachFile"
         >
           <ImageIcon class="w-3 h-3 mr-1" />
@@ -418,7 +359,7 @@ const formatEstimate = (minutes: number) => {
               class="flex items-center gap-2 group/md"
             >
               <button
-                class="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 hover:underline transition-colors min-w-0"
+                class="flex min-w-0 items-center gap-1.5 text-xs text-foreground hover:underline"
                 @click="handleMarkdownClick(md)"
               >
                 <FileText class="w-3.5 h-3.5 shrink-0" />
@@ -486,7 +427,7 @@ const formatEstimate = (minutes: number) => {
           @click="emit('navigate-to-issue', issue.parent.id)"
         >
           <div class="flex items-center gap-2 min-w-0">
-            <span class="text-xs text-sky-400 hover:underline font-mono shrink-0">{{ issue.parent.id }}</span>
+            <span class="shrink-0 font-mono text-xs text-foreground hover:underline">{{ issue.parent.id }}</span>
             <span class="text-xs truncate">{{ issue.parent.title }}</span>
           </div>
           <div class="flex items-center gap-1 shrink-0">
@@ -522,7 +463,7 @@ const formatEstimate = (minutes: number) => {
           type="button"
           variant="outline"
           size="sm"
-          class="h-5 px-1.5 text-[10px] hover:bg-sky-500/20 hover:border-sky-500 hover:text-sky-400 active:scale-95 active:bg-sky-500/30 transition-all"
+          class="h-5 px-1.5 text-[10px]"
           @click="emit('create-child', issue.id)"
         >
           <Plus class="w-3 h-3 mr-1" />
@@ -538,7 +479,7 @@ const formatEstimate = (minutes: number) => {
             @click="emit('navigate-to-issue', child.id)"
           >
             <div class="flex items-center gap-2 min-w-0">
-              <span class="text-xs text-sky-400 hover:underline font-mono shrink-0">{{ getShortId(child.id) }}</span>
+              <span class="shrink-0 font-mono text-xs text-foreground hover:underline">{{ getShortId(child.id) }}</span>
               <span class="text-xs truncate">{{ child.title }}</span>
             </div>
             <div class="flex items-center gap-1 shrink-0">
@@ -600,12 +541,12 @@ const formatEstimate = (minutes: number) => {
       <div v-show="isDetailsOpen" class="mt-1 pl-4.5">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <h5 class="text-[10px] font-medium text-sky-400 uppercase tracking-wide mb-0.5">Assignee</h5>
+            <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Assignee</h5>
             <p class="text-xs">{{ issue.assignee || 'Unassigned' }}</p>
           </div>
 
           <div>
-            <h5 class="text-[10px] font-medium text-sky-400 uppercase tracking-wide mb-0.5">Labels</h5>
+            <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Labels</h5>
             <div v-if="issue.labels?.length" class="flex flex-wrap gap-1">
               <LabelBadge v-for="label in issue.labels" :key="label" :label="label" size="sm" />
             </div>
@@ -613,12 +554,12 @@ const formatEstimate = (minutes: number) => {
           </div>
 
           <div>
-            <h5 class="text-[10px] font-medium text-sky-400 uppercase tracking-wide mb-0.5">Created</h5>
+            <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Created</h5>
             <p class="text-xs">{{ formatDate(issue.createdAt) }}</p>
           </div>
 
           <div>
-            <h5 class="text-[10px] font-medium text-sky-400 uppercase tracking-wide mb-0.5">Updated</h5>
+            <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Updated</h5>
             <p class="text-xs">{{ formatDate(issue.updatedAt) }}</p>
           </div>
         </div>
@@ -649,7 +590,7 @@ const formatEstimate = (minutes: number) => {
           type="button"
           variant="outline"
           size="sm"
-          class="h-5 px-1.5 text-[10px] hover:bg-sky-500/20 hover:border-sky-500 hover:text-sky-400 active:scale-95 active:bg-sky-500/30 transition-all"
+          class="h-5 px-1.5 text-[10px]"
           @click="emit('open-add-blocker', issue.id)"
         >
           <Plus class="w-3 h-3 mr-1" />
@@ -659,18 +600,16 @@ const formatEstimate = (minutes: number) => {
       <div v-show="isDependenciesOpen" class="mt-1 pl-4.5 space-y-2">
         <!-- Blocked By -->
         <div v-if="issue.blockedBy?.length">
-          <h5 class="text-[10px] font-medium text-sky-400 uppercase tracking-wide mb-0.5">Blocked By</h5>
+          <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocked By</h5>
           <div class="space-y-0.5">
             <div
               v-for="id in sortedBlockedBy"
               :key="id"
-              class="group/dep flex items-center gap-2 py-1 cursor-pointer rounded px-2 -mx-1"
-              :class="isNeon ? 'hover:brightness-125' : 'bg-muted hover:bg-muted/80 border border-border/40'"
-              :style="depNeonStyle(availableIssues?.find(i => i.id === id)?.priority)"
+              class="group/dep -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
               @click="emit('navigate-to-issue', id)"
             >
               <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
-              <span v-if="getIssueTitle(id)" :class="['text-xs truncate', isNeon ? depTextColor(availableIssues?.find(i => i.id === id)?.priority) + ' opacity-60' : 'text-muted-foreground']">{{ getIssueTitle(id) }}</span>
+              <span v-if="getIssueTitle(id)" class="truncate text-xs text-muted-foreground">{{ getIssueTitle(id) }}</span>
               <span
                 v-if="!readonly"
                 class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
@@ -684,18 +623,16 @@ const formatEstimate = (minutes: number) => {
 
         <!-- Blocks -->
         <div v-if="issue.blocks?.length">
-          <h5 class="text-[10px] font-medium text-sky-400 uppercase tracking-wide mb-0.5">Blocks</h5>
+          <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocks</h5>
           <div class="space-y-0.5">
             <div
               v-for="id in sortedBlocks"
               :key="id"
-              class="group/dep flex items-center gap-2 py-1 cursor-pointer rounded px-2 -mx-1"
-              :class="isNeon ? 'hover:brightness-125' : 'bg-muted hover:bg-muted/80 border border-border/40'"
-              :style="depNeonStyle(availableIssues?.find(i => i.id === id)?.priority)"
+              class="group/dep -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
               @click="emit('navigate-to-issue', id)"
             >
               <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
-              <span v-if="getIssueTitle(id)" :class="['text-xs truncate', isNeon ? depTextColor(availableIssues?.find(i => i.id === id)?.priority) + ' opacity-60' : 'text-muted-foreground']">{{ getIssueTitle(id) }}</span>
+              <span v-if="getIssueTitle(id)" class="truncate text-xs text-muted-foreground">{{ getIssueTitle(id) }}</span>
               <span
                 v-if="!readonly"
                 class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
@@ -735,7 +672,7 @@ const formatEstimate = (minutes: number) => {
           type="button"
           variant="outline"
           size="sm"
-          class="h-5 px-1.5 text-[10px] hover:bg-sky-500/20 hover:border-sky-500 hover:text-sky-400 active:scale-95 active:bg-sky-500/30 transition-all"
+          class="h-5 px-1.5 text-[10px]"
           @click="emit('open-add-relation', issue.id)"
         >
           <Plus class="w-3 h-3 mr-1" />
@@ -744,18 +681,16 @@ const formatEstimate = (minutes: number) => {
       </div>
       <div v-show="isRelationsOpen" class="mt-1 pl-4.5 space-y-2">
         <div v-for="group in groupedRelations" :key="group.type">
-          <h5 class="text-[10px] font-medium text-sky-400 uppercase tracking-wide mb-0.5">{{ group.label }}</h5>
+          <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{{ group.label }}</h5>
           <div class="space-y-0.5">
             <div
               v-for="rel in group.items"
               :key="rel.id"
-              class="group/rel flex items-center gap-2 py-1 cursor-pointer rounded px-2 -mx-1"
-              :class="isNeon ? 'hover:brightness-125' : 'bg-muted hover:bg-muted/80 border border-border/40'"
-              :style="depNeonStyle(rel.priority || availableIssues?.find(i => i.id === rel.id)?.priority)"
+              class="group/rel -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
               @click="emit('navigate-to-issue', rel.id)"
             >
               <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(rel.priority || availableIssues?.find(i => i.id === rel.id)?.priority)]">{{ getShortId(rel.id) }}</span>
-              <span v-if="rel.title || getIssueTitle(rel.id)" :class="['text-xs truncate', isNeon ? depTextColor(rel.priority || availableIssues?.find(i => i.id === rel.id)?.priority) + ' opacity-60' : 'text-muted-foreground']">{{ rel.title || getIssueTitle(rel.id) }}</span>
+              <span v-if="rel.title || getIssueTitle(rel.id)" class="truncate text-xs text-muted-foreground">{{ rel.title || getIssueTitle(rel.id) }}</span>
               <span
                 class="ml-auto opacity-0 group-hover/rel:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
                 @click.stop="handleRemoveRelation(rel.id, rel.direction)"

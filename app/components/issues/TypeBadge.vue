@@ -10,11 +10,11 @@ const props = defineProps<{
 const { showBadgeIcons } = useTheme()
 
 const typeConfig: Record<IssueType, { label: string; class: string }> = {
-  bug: { label: 'BUG', class: 'badge-gradient bg-type-bug-gradient text-white' },
-  task: { label: 'TASK', class: 'badge-gradient bg-type-task-gradient text-white' },
-  feature: { label: 'FEATURE', class: 'badge-gradient bg-type-feature-gradient text-white' },
-  epic: { label: 'EPIC', class: 'badge-gradient bg-type-epic-gradient text-white' },
-  chore: { label: 'CHORE', class: 'badge-gradient bg-type-chore-gradient text-white' },
+  bug: { label: 'BUG', class: 'border-destructive/30 bg-destructive/10 text-destructive' },
+  task: { label: 'TASK', class: 'border-transparent bg-secondary text-secondary-foreground' },
+  feature: { label: 'FEATURE', class: 'border-transparent bg-secondary text-secondary-foreground' },
+  epic: { label: 'EPIC', class: 'border-transparent bg-secondary text-secondary-foreground' },
+  chore: { label: 'CHORE', class: 'border-transparent bg-muted text-muted-foreground' },
 }
 
 // SVG icon paths for each type (12x12 viewBox)
@@ -30,7 +30,7 @@ const config = computed(() => typeConfig[props.type] || typeConfig.task)
 </script>
 
 <template>
-  <Badge :class="[config.class, size === 'sm' ? 'text-[10px] px-1.5 py-0' : '']" variant="secondary">
+  <Badge :class="[config.class, size === 'sm' ? 'px-1.5 py-0 text-[10px]' : '']" variant="outline">
     <span v-if="showBadgeIcons" class="inline-flex items-center mr-1">
       <svg class="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
         <path :d="typeIcons[type] || typeIcons.task" />
