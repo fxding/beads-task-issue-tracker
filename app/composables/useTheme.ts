@@ -3,12 +3,11 @@ export interface ThemeDefinition {
   label: string
   icon: 'sun' | 'moon'
   baseMode: 'light' | 'dark'
-  showBadgeIcons: boolean
 }
 
 const THEMES: ThemeDefinition[] = [
-  { id: 'light', label: 'Light', icon: 'sun', baseMode: 'light', showBadgeIcons: false },
-  { id: 'dark', label: 'Dark', icon: 'moon', baseMode: 'dark', showBadgeIcons: false },
+  { id: 'light', label: 'Light', icon: 'sun', baseMode: 'light' },
+  { id: 'dark', label: 'Dark', icon: 'moon', baseMode: 'dark' },
 ]
 
 const LEGACY_THEME_MIGRATIONS: Record<string, ThemeDefinition['id']> = {
@@ -41,8 +40,6 @@ export function useTheme() {
 
   const isDark = computed(() => currentTheme.value.baseMode === 'dark')
 
-  const showBadgeIcons = computed(() => currentTheme.value.showBadgeIcons)
-
   const setTheme = (id: string) => {
     theme.value = normalizeThemeId(id)
     updateHtmlClass()
@@ -57,7 +54,6 @@ export function useTheme() {
   const updateHtmlClass = () => {
     if (import.meta.client) {
       document.documentElement.classList.toggle('dark', isDark.value)
-      document.documentElement.setAttribute('data-theme', normalizeThemeId(theme.value))
     }
   }
 
@@ -71,7 +67,6 @@ export function useTheme() {
     themes,
     currentTheme,
     isDark,
-    showBadgeIcons,
     setTheme,
     cycleTheme,
   }
