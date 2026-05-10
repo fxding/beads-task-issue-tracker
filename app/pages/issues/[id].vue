@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ellipsis, Link2, Paperclip, ShieldAlert } from 'lucide-vue-next'
+import { Check, Copy, Ellipsis, Link2, Paperclip, ShieldAlert } from 'lucide-vue-next'
 import type { Issue, UpdateIssuePayload } from '~/types/issue'
 import AppSidebar from '~/components/AppSidebar.vue'
 import FolderPicker from '~/components/dashboard/FolderPicker.vue'
@@ -79,6 +79,7 @@ const isEditMode = ref(false)
 const isPageLoading = ref(true)
 const isOnboardingPickerOpen = ref(false)
 const appSidebarRef = ref<InstanceType<typeof AppSidebar> | null>(null)
+const copiedIssueId = ref(false)
 
 type IssuesView = 'table' | 'list' | 'board' | 'stats'
 const activeIssuesView = useProjectStorage<IssuesView>('activeIssuesView', 'table')
@@ -225,6 +226,21 @@ const handleRefresh = () => {
   window.location.reload()
 }
 
+const handleCopyIssueId = async () => {
+  if (!currentIssue.value) return
+
+  try {
+    await navigator.clipboard.writeText(currentIssue.value.id)
+    copiedIssueId.value = true
+    notifySuccess('Issue ID copied', currentIssue.value.id)
+    setTimeout(() => {
+      copiedIssueId.value = false
+    }, 2000)
+  } catch {
+    notifyError('Failed to copy issue ID')
+  }
+}
+
 const handleOnboardingFolderSelect = async (path: string) => {
   setPath(path)
   await fetchIssues()
@@ -303,8 +319,8 @@ onMounted(async () => {
         <SidebarTrigger class="-ml-1" />
         <Separator orientation="vertical" class="mr-1 h-4!" />
 
-        <div class="min-w-0 flex-1">
-          <Breadcrumb>
+        <div class="min-w-0 flex flex-1 items-center gap-2">
+          <Breadcrumb class="min-w-0">
             <BreadcrumbList>
               <BreadcrumbItem class="hidden md:block">
                 <span class="truncate text-muted-foreground">{{ currentProjectName || 'Beads Task-Issue Tracker' }}</span>
@@ -321,6 +337,19 @@ onMounted(async () => {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+
+          <Button
+            v-if="currentIssue"
+            variant="ghost"
+            size="icon-sm"
+            class="h-8 w-8 shrink-0"
+            :aria-label="copiedIssueId ? 'Issue ID copied' : 'Copy issue ID'"
+            :title="copiedIssueId ? 'Copied' : `Copy ${currentIssue.id}`"
+            @click="handleCopyIssueId"
+          >
+            <Check v-if="copiedIssueId" class="h-3.5 w-3.5 text-green-500" />
+            <Copy v-else class="h-3.5 w-3.5" />
+          </Button>
         </div>
 
         <div v-if="currentIssue && !isEditMode" class="flex items-center gap-1.5">
