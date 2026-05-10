@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FolderKanban, Link2, Tag, UserRound } from 'lucide-vue-next'
+import { CircleDot, FolderKanban, Link2, Tag, UserRound } from 'lucide-vue-next'
 import type { Issue } from '~/types/issue'
 import { Button } from '~/components/ui/button'
 import LabelBadge from '~/components/issues/LabelBadge.vue'
+import StatusBadge from '~/components/issues/StatusBadge.vue'
+import PriorityBadge from '~/components/issues/PriorityBadge.vue'
 
 const props = defineProps<{
   issue: Issue
@@ -81,6 +83,16 @@ const propertySections = computed(() => {
       title: 'Properties',
       items: [
         {
+          key: 'status',
+          label: 'Status',
+          empty: false,
+        },
+        {
+          key: 'priority',
+          label: 'Priority',
+          empty: false,
+        },
+        {
           key: 'assignee',
           label: 'Assignee',
           value: props.issue.assignee || 'Unassigned',
@@ -151,7 +163,9 @@ const propertySections = computed(() => {
           @click="!readonly && emit('edit')"
         >
           <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-muted-foreground">
-            <UserRound v-if="item.key === 'assignee'" class="size-3.5" />
+            <CircleDot v-if="item.key === 'status'" class="size-3.5" />
+            <svg v-else-if="item.key === 'priority'" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18" /><path d="m17 8-5-5-5 5" /></svg>
+            <UserRound v-else-if="item.key === 'assignee'" class="size-3.5" />
             <Tag v-else-if="item.key === 'labels'" class="size-3.5" />
             <FolderKanban v-else class="size-3.5" />
           </span>
@@ -159,7 +173,9 @@ const propertySections = computed(() => {
           <div class="min-w-0 flex-1">
             <p class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{{ item.label }}</p>
             <div class="mt-1 min-h-5">
-              <div v-if="item.key === 'labels' && issue.labels?.length" class="flex flex-wrap gap-1">
+              <StatusBadge v-if="item.key === 'status'" :status="issue.status" size="sm" />
+              <PriorityBadge v-else-if="item.key === 'priority'" :priority="issue.priority" size="sm" />
+              <div v-else-if="item.key === 'labels' && issue.labels?.length" class="flex flex-wrap gap-1">
                 <LabelBadge v-for="label in issue.labels" :key="label" :label="label" size="sm" />
               </div>
               <p v-else-if="item.key === 'parent' && issue.parent" class="truncate text-xs text-foreground">{{ getShortId(issue.parent.id) }} · {{ issue.parent.title }}</p>

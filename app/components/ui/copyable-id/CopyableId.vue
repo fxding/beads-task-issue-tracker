@@ -2,7 +2,6 @@
 const props = defineProps<{
   value: string
   displayValue?: string
-  iconOnly?: boolean
 }>()
 
 const copied = ref(false)
@@ -27,7 +26,7 @@ const copyToClipboard = async (event: Event) => {
     :title="`Copy ${props.value}`"
     @click="copyToClipboard"
   >
-    <span v-if="!props.iconOnly">{{ displayValue ?? value }}</span>
+    {{ displayValue ?? value }}
     <svg
       v-if="!copied"
       class="w-3 h-3"
