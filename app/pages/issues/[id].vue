@@ -71,6 +71,13 @@ const appSidebarRef = ref<InstanceType<typeof AppSidebar> | null>(null)
 
 type IssuesView = 'table' | 'list' | 'board' | 'stats'
 const activeIssuesView = useProjectStorage<IssuesView>('activeIssuesView', 'table')
+const issuesViewMeta: Record<IssuesView, { label: string }> = {
+  table: { label: 'Table' },
+  list: { label: 'List' },
+  board: { label: 'Board' },
+  stats: { label: 'Stats' },
+}
+const breadcrumbSectionLabel = computed(() => issuesViewMeta[activeIssuesView.value]?.label || 'Issues')
 
 const issueId = computed(() => decodeURIComponent(String(route.params.id ?? '')))
 const currentIssue = computed<Issue | null>(() =>
@@ -294,7 +301,7 @@ onMounted(async () => {
               <BreadcrumbSeparator class="hidden md:block" />
               <BreadcrumbItem>
                 <Button variant="ghost" size="sm" @click="goBackToList">
-                  Issues
+                  {{ breadcrumbSectionLabel }}
                 </Button>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
