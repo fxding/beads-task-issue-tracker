@@ -137,7 +137,7 @@ const propertySections = computed(() => {
     <div
       v-for="section in propertySections"
       :key="section.key"
-      class="rounded-2xl border border-border/70 bg-card/90 p-4 shadow-sm"
+      class="rounded-2xl border border-border/70 bg-card/90 p-4"
     >
       <div class="mb-3 flex items-center justify-between gap-2">
         <h4 class="text-sm font-medium text-foreground">{{ section.title }}</h4>
@@ -188,7 +188,7 @@ const propertySections = computed(() => {
 
     <div
       v-if="groupedRelations.length"
-      class="rounded-2xl border border-border/70 bg-card/90 p-4 shadow-sm"
+      class="rounded-2xl border border-border/70 bg-card/90 p-4"
     >
       <div class="mb-3 flex items-center justify-between gap-2">
         <h4 class="text-sm font-medium text-foreground">Related</h4>

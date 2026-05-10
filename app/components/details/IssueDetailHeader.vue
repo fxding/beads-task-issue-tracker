@@ -17,7 +17,7 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="rounded-2xl border border-border/70 bg-card/90 p-4 shadow-sm space-y-3">
+  <div class="bg-card/90 p-4 space-y-3">
     <!-- Badges row -->
     <div class="flex items-center gap-1.5 flex-wrap">
       <CopyableId :value="selectedIssue.id" :display-value="selectedIssue.id.includes('-') ? selectedIssue.id.slice(selectedIssue.id.lastIndexOf('-') + 1) : selectedIssue.id" />
