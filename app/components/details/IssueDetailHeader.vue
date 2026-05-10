@@ -1,37 +1,23 @@
 <script setup lang="ts">
-import { Ellipsis, Link2, Paperclip, ShieldAlert } from 'lucide-vue-next'
 import type { Issue } from '~/types/issue'
 import TypeBadge from '~/components/issues/TypeBadge.vue'
 import StatusBadge from '~/components/issues/StatusBadge.vue'
 import PriorityBadge from '~/components/issues/PriorityBadge.vue'
 import { Button } from '~/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu'
 
 defineProps<{
   selectedIssue: Issue
-  isPinned?: boolean
 }>()
 
 defineEmits<{
   edit: []
   reopen: []
   close: []
-  delete: []
-  'toggle-pin': []
-  'add-attachment': []
-  'add-blocker': []
-  'add-relation': []
 }>()
 </script>
 
 <template>
-  <div class="p-4 pb-0 space-y-3 border-b border-border">
+  <div class="rounded-2xl border border-border/70 bg-card/90 p-4 shadow-sm space-y-3">
     <!-- Badges row -->
     <div class="flex items-center gap-1.5 flex-wrap">
       <CopyableId :value="selectedIssue.id" :display-value="selectedIssue.id.includes('-') ? selectedIssue.id.slice(selectedIssue.id.lastIndexOf('-') + 1) : selectedIssue.id" />
@@ -41,23 +27,10 @@ defineEmits<{
     </div>
 
     <!-- Title -->
-    <div class="flex items-start gap-2">
-      <h3 class="min-w-0 flex-1 text-sm font-semibold line-clamp-2">{{ selectedIssue.title }}</h3>
-      <Button
-        :variant="isPinned ? 'secondary' : 'ghost'"
-        size="icon-sm"
-        class="h-7 w-7 shrink-0"
-        :aria-label="isPinned ? 'Unpin issue' : 'Pin issue'"
-        @click="$emit('toggle-pin')"
-      >
-        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" :fill="isPinned ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 4v6l-2 4h10l-2-4V4" /><line x1="12" y1="16" x2="12" y2="21" /><line x1="8" y1="4" x2="16" y2="4" />
-        </svg>
-      </Button>
-    </div>
+    <h3 class="text-sm font-semibold line-clamp-2">{{ selectedIssue.title }}</h3>
 
     <!-- Action buttons -->
-    <div class="flex items-center justify-between gap-2 pb-3">
+    <div class="flex items-center gap-2 pb-1">
       <div class="flex items-center gap-1 flex-wrap">
         <!-- Edit button: only when not closed -->
         <Button v-if="selectedIssue.status !== 'closed'" size="sm" @click="$emit('edit')">
@@ -92,38 +65,6 @@ defineEmits<{
           Close
         </Button>
       </div>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="icon-sm" class="h-8 w-8 shrink-0" aria-label="More actions">
-            <Ellipsis class="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="w-48">
-          <DropdownMenuItem v-if="selectedIssue.status !== 'closed'" @select="$emit('add-attachment')">
-            <Paperclip class="mr-2 h-3.5 w-3.5" />
-            Attach file
-          </DropdownMenuItem>
-          <DropdownMenuItem v-if="selectedIssue.status !== 'closed'" @select="$emit('add-blocker')">
-            <ShieldAlert class="mr-2 h-3.5 w-3.5" />
-            Add blocker
-          </DropdownMenuItem>
-          <DropdownMenuItem v-if="selectedIssue.status !== 'closed'" @select="$emit('add-relation')">
-            <Link2 class="mr-2 h-3.5 w-3.5" />
-            Create related
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem class="text-destructive focus:text-destructive" @select="$emit('delete')">
-            <svg class="mr-2 h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              <line x1="10" y1="11" x2="10" y2="17" />
-              <line x1="14" y1="11" x2="14" y2="17" />
-            </svg>
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   </div>
 </template>

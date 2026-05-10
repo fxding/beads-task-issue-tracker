@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Ellipsis, Link2, Paperclip, ShieldAlert } from 'lucide-vue-next'
 import type { Issue, UpdateIssuePayload } from '~/types/issue'
 import AppSidebar from '~/components/AppSidebar.vue'
 import FolderPicker from '~/components/dashboard/FolderPicker.vue'
@@ -18,6 +19,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '~/components/ui/breadcrumb'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
 import { ScrollArea } from '~/components/ui/scroll-area'
 import { Separator } from '~/components/ui/separator'
 import {
@@ -295,7 +303,7 @@ onMounted(async () => {
         <SidebarTrigger class="-ml-1" />
         <Separator orientation="vertical" class="mr-1 h-4" />
 
-        <div class="min-w-0">
+        <div class="min-w-0 flex-1">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem class="hidden md:block">
@@ -314,6 +322,52 @@ onMounted(async () => {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+
+        <div v-if="currentIssue && !isEditMode" class="flex items-center gap-1.5">
+          <Button
+            :variant="isPinned(currentIssue.id) ? 'secondary' : 'ghost'"
+            size="icon-sm"
+            class="h-8 w-8 shrink-0"
+            :aria-label="isPinned(currentIssue.id) ? 'Unpin issue' : 'Pin issue'"
+            @click="togglePin(currentIssue.id)"
+          >
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" :fill="isPinned(currentIssue.id) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 4v6l-2 4h10l-2-4V4" /><line x1="12" y1="16" x2="12" y2="21" /><line x1="8" y1="4" x2="16" y2="4" />
+            </svg>
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="ghost" size="icon-sm" class="h-8 w-8 shrink-0" aria-label="More actions">
+                <Ellipsis class="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="w-48">
+              <DropdownMenuItem v-if="currentIssue.status !== 'closed'" @select="openAttachmentDialog">
+                <Paperclip class="mr-2 h-3.5 w-3.5" />
+                Attach file
+              </DropdownMenuItem>
+              <DropdownMenuItem v-if="currentIssue.status !== 'closed'" @select="openAddBlockerDialog(currentIssue.id)">
+                <ShieldAlert class="mr-2 h-3.5 w-3.5" />
+                Add blocker
+              </DropdownMenuItem>
+              <DropdownMenuItem v-if="currentIssue.status !== 'closed'" @select="openAddRelationDialog(currentIssue.id)">
+                <Link2 class="mr-2 h-3.5 w-3.5" />
+                Create related
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem class="text-destructive focus:text-destructive" @select="handleDeleteIssue">
+                <svg class="mr-2 h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       <main class="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
@@ -326,20 +380,6 @@ onMounted(async () => {
         </div>
 
         <div v-else-if="currentIssue" class="overflow-hidden">
-          <IssueDetailHeader
-            v-if="!isEditMode"
-            :selected-issue="currentIssue"
-            :is-pinned="isPinned(currentIssue.id)"
-            @edit="handleEditIssue"
-            @reopen="handleReopenIssue"
-            @close="handleCloseIssue"
-            @delete="handleDeleteIssue"
-            @toggle-pin="togglePin(currentIssue.id)"
-            @add-attachment="openAttachmentDialog"
-            @add-blocker="openAddBlockerDialog(currentIssue.id)"
-            @add-relation="openAddRelationDialog(currentIssue.id)"
-          />
-
           <div v-if="isEditMode" class="min-h-[70vh] p-4">
             <IssueForm
               :issue="currentIssue"
@@ -353,18 +393,24 @@ onMounted(async () => {
             />
           </div>
 
-          <div v-else class="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <div v-else class="grid gap-4 pt-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
             <ScrollArea class="min-h-0 lg:max-h-[calc(100vh-12rem)]">
               <div class="space-y-3 pr-1">
+                <IssueDetailHeader
+                  :selected-issue="currentIssue"
+                  @edit="handleEditIssue"
+                  @reopen="handleReopenIssue"
+                  @close="handleCloseIssue"
+                />
                 <IssuePreview
                   :issue="currentIssue"
                   :readonly="currentIssue.status === 'closed'"
-                :available-issues="availableIssuesForDeps"
-                @navigate-to-issue="handleNavigateToIssue"
-                @create-child="handleCreateChild"
-                @open-add-blocker="openAddBlockerDialog"
-                @remove-dependency="confirmRemoveDependency"
-              />
+                  :available-issues="availableIssuesForDeps"
+                  @navigate-to-issue="handleNavigateToIssue"
+                  @create-child="handleCreateChild"
+                  @open-add-blocker="openAddBlockerDialog"
+                  @remove-dependency="confirmRemoveDependency"
+                />
                 <IssueAttachmentsSection
                   :issue-id="currentIssue.id"
                   :readonly="currentIssue.status === 'closed'"
