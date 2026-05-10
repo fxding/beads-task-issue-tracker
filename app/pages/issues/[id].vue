@@ -399,7 +399,7 @@ onMounted(async () => {
             />
           </div>
 
-          <div v-else class="grid gap-4 pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div v-else class="mx-auto grid w-full max-w-6xl gap-4 pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
             <ScrollArea class="min-h-0 lg:max-h-[calc(100vh-12rem)]">
               <div class="space-y-3 pr-1">
                 <IssueDetailHeader
