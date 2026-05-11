@@ -521,20 +521,20 @@ export function useIssues() {
     error.value = null
 
     try {
-      const data = await bdUpdate(id, payload, getPath())
+      await bdUpdate(id, payload, getPath())
 
-      // Update local list directly with API response (no need to refetch)
-      if (data) {
+      // bd update responses can be sparse depending on the CLI/backend path.
+      // Re-fetch the canonical issue so inline edits never overwrite untouched
+      // fields with partial payload data.
+      const fresh = await fetchIssue(id)
+      if (fresh) {
         const index = issues.value.findIndex(i => i.id === id)
         if (index !== -1) {
-          issues.value[index] = data
-        }
-        if (selectedIssue.value?.id === id) {
-          selectedIssue.value = data
+          issues.value[index] = fresh
         }
       }
 
-      return data
+      return fresh
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to update issue'
       return null

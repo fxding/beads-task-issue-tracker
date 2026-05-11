@@ -53,6 +53,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <span v-if="text" ref="containerRef" class="markdown-base compact" v-html="renderedHtml" />
+  <div v-if="text" ref="containerRef" class="markdown-base compact" v-html="renderedHtml" />
   <span v-else>{{ displayFallback }}</span>
 </template>

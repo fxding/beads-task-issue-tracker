@@ -210,4 +210,10 @@ describe('renderMarkdown', () => {
     expect(html).toContain('<ul>')
     expect(html).toContain('<li>')
   })
+
+  it('renders block headings and paragraphs for preview containers', () => {
+    const html = renderMarkdown('# Heading\n\nParagraph text')
+    expect(html).toContain('<h1>Heading</h1>')
+    expect(html).toContain('<p>Paragraph text</p>')
+  })
 })
