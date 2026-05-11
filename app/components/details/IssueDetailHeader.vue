@@ -1,33 +1,77 @@
 <script setup lang="ts">
-import type { Issue } from '~/types/issue'
+import { computed, ref, watch } from 'vue'
+import type { Issue, UpdateIssuePayload } from '~/types/issue'
 import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
 
-defineProps<{
+const props = defineProps<{
   selectedIssue: Issue
+  readonly?: boolean
 }>()
 
-defineEmits<{
-  edit: []
+const emit = defineEmits<{
+  'save-inline': [payload: UpdateIssuePayload]
   reopen: []
 }>()
+
+const title = ref('')
+
+watch(
+  () => props.selectedIssue.title,
+  (nextTitle) => {
+    title.value = nextTitle
+  },
+  { immediate: true },
+)
+
+const hasTitleChanges = computed(() => title.value !== props.selectedIssue.title)
+
+const saveTitle = () => {
+  if (!hasTitleChanges.value) return
+  emit('save-inline', { title: title.value })
+}
+
+const resetTitle = () => {
+  title.value = props.selectedIssue.title
+}
+
+const handleTitleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    saveTitle()
+  }
+
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    resetTitle()
+  }
+}
 </script>
 
 <template>
   <div class="bg-card/90 p-4 space-y-3">
     <!-- Title -->
-    <h3 class="text-sm font-semibold line-clamp-2">{{ selectedIssue.title }}</h3>
+    <div class="space-y-2">
+      <Input
+        v-model="title"
+        :readonly="readonly"
+        class="h-auto border-0 bg-transparent px-0 py-0 text-sm font-semibold shadow-none focus-visible:ring-0"
+        aria-label="Issue title"
+        @keydown="handleTitleKeydown"
+      />
+      <div v-if="!readonly && hasTitleChanges" class="flex items-center gap-2">
+        <Button type="button" size="sm" @click="saveTitle">
+          Save title
+        </Button>
+        <Button type="button" size="sm" variant="ghost" @click="resetTitle">
+          Reset
+        </Button>
+      </div>
+    </div>
 
     <!-- Action buttons -->
     <div class="flex items-center gap-2 pb-1">
       <div class="flex items-center gap-1 flex-wrap">
-        <!-- Edit button: only when not closed -->
-        <Button v-if="selectedIssue.status !== 'closed'" size="sm" @click="$emit('edit')">
-          <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
-          Edit
-        </Button>
         <!-- Reopen button: only when closed -->
         <Button
           v-if="selectedIssue.status === 'closed'"

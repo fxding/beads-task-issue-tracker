@@ -433,7 +433,8 @@ onMounted(async () => {
               <div class="space-y-3 pr-1">
                 <IssueDetailHeader
                   :selected-issue="currentIssue"
-                  @edit="handleEditIssue"
+                  :readonly="currentIssue.status === 'closed'"
+                  @save-inline="handleSaveIssue"
                   @reopen="handleReopenIssue"
                 />
                 <IssuePreview

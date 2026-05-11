@@ -105,10 +105,9 @@ describe('IssuePreview', () => {
       },
     })
 
-    await wrapper.get('[aria-label="Edit description"]').trigger('click')
     const editor = wrapper.get('[data-testid="inline-markdown-editor"]')
     await editor.setValue('Updated **markdown** description')
-    await wrapper.get('[aria-label="Save description"]').trigger('click')
+    await wrapper.get('button[aria-label="Save description"]').trigger('click')
     await nextTick()
 
     const payload = wrapper.emitted('save-inline')?.[0]?.[0] as UpdateIssuePayload | undefined
@@ -133,4 +132,18 @@ describe('IssuePreview', () => {
     const payload = wrapper.emitted('save-inline')?.[0]?.[0] as UpdateIssuePayload | undefined
     expect(payload).toEqual({ acceptanceCriteria: '- updated\n- criteria' })
   })
+  it('shows inline editors without edit icon buttons', () => {
+    const wrapper = mount(IssuePreview, {
+      props: {
+        issue,
+        readonly: false,
+        availableIssues: [],
+      },
+    })
+
+    expect(wrapper.findAll('[data-testid="inline-markdown-editor"]')).toHaveLength(2)
+    expect(wrapper.find('[aria-label="Edit description"]').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="Edit acceptance criteria"]').exists()).toBe(false)
+  })
+
 })

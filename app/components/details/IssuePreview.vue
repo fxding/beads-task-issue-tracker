@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { Check, Pencil, Plus, X } from 'lucide-vue-next'
+import { Plus, X } from 'lucide-vue-next'
 import type { Issue, UpdateIssuePayload } from '~/types/issue'
 import { Button } from '~/components/ui/button'
 import { LinkifiedText } from '~/components/ui/linkified-text'
@@ -37,48 +37,44 @@ const inlineForm = reactive({
   acceptanceCriteria: props.issue.acceptanceCriteria || '',
 })
 
-const activeInlineField = ref<InlineField>(null)
+const savingField = ref<InlineField>(null)
 
 watch(
   () => props.issue,
   (issue) => {
     inlineForm.description = issue.description || ''
     inlineForm.acceptanceCriteria = issue.acceptanceCriteria || ''
-    activeInlineField.value = null
   },
   { immediate: true }
 )
 
 const canInlineEdit = computed(() => !props.readonly)
+const hasDescriptionChanges = computed(() => inlineForm.description !== (props.issue.description || ''))
+const hasAcceptanceCriteriaChanges = computed(() => inlineForm.acceptanceCriteria !== (props.issue.acceptanceCriteria || ''))
 
-const startInlineEdit = (field: Exclude<InlineField, null>) => {
-  if (!canInlineEdit.value) return
-  inlineForm.description = props.issue.description || ''
-  inlineForm.acceptanceCriteria = props.issue.acceptanceCriteria || ''
-  const nextSections = {
-    ...previewSections.value,
-    [field]: true,
-  }
-  previewSections.value = nextSections
-  saveProjectValue('previewSections', nextSections)
-  activeInlineField.value = field
+const resetInlineField = (field: Exclude<InlineField, null>) => {
+  inlineForm[field] = props.issue[field] || ''
 }
 
-const cancelInlineEdit = () => {
-  inlineForm.description = props.issue.description || ''
-  inlineForm.acceptanceCriteria = props.issue.acceptanceCriteria || ''
-  activeInlineField.value = null
-}
+const saveInlineField = (field: Exclude<InlineField, null>) => {
+  const hasChanges = field === 'description'
+    ? hasDescriptionChanges.value
+    : hasAcceptanceCriteriaChanges.value
 
-const saveInlineField = () => {
-  if (!activeInlineField.value) return
+  if (!hasChanges) return
 
-  const field = activeInlineField.value
+  savingField.value = field
   emit('save-inline', {
     [field]: inlineForm[field],
   })
-  activeInlineField.value = null
 }
+
+watch(
+  () => [props.issue.description, props.issue.acceptanceCriteria],
+  () => {
+    savingField.value = null
+  },
+)
 
 // Natural sort comparison for IDs (handles multi-digit numbers correctly)
 const naturalCompare = (a: string, b: string): number => {
@@ -259,31 +255,18 @@ const formatEstimate = (minutes: number) => {
           </svg>
           <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Description</h4>
         </button>
-        <div v-if="canInlineEdit" class="flex items-center gap-1">
-          <template v-if="activeInlineField === 'description'">
-            <Button type="button" variant="ghost" size="icon-sm" class="h-7 w-7" aria-label="Save description" @click="saveInlineField">
-              <Check class="h-3.5 w-3.5" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon-sm" class="h-7 w-7" aria-label="Cancel description edit" @click="cancelInlineEdit">
-              <X class="h-3.5 w-3.5" />
-            </Button>
-          </template>
-          <Button
-            v-else
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            class="h-7 w-7"
-            aria-label="Edit description"
-            @click="startInlineEdit('description')"
-          >
-            <Pencil class="h-3.5 w-3.5" />
+        <div v-if="canInlineEdit && hasDescriptionChanges" class="flex items-center gap-2">
+          <Button type="button" size="sm" aria-label="Save description" :disabled="savingField === 'description'" @click="saveInlineField('description')">
+            Save description
+          </Button>
+          <Button type="button" variant="ghost" size="sm" @click="resetInlineField('description')">
+            Reset
           </Button>
         </div>
       </div>
       <div v-show="isDescriptionOpen" class="mt-1 pl-4.5">
         <MarkdownEditor
-          v-if="activeInlineField === 'description'"
+          v-if="canInlineEdit"
           v-model="inlineForm.description"
           placeholder="Describe the issue..."
           class="text-xs"
@@ -314,31 +297,18 @@ const formatEstimate = (minutes: number) => {
           </svg>
           <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Acceptance Criteria</h4>
         </button>
-        <div v-if="canInlineEdit" class="flex items-center gap-1">
-          <template v-if="activeInlineField === 'acceptanceCriteria'">
-            <Button type="button" variant="ghost" size="icon-sm" class="h-7 w-7" aria-label="Save acceptance criteria" @click="saveInlineField">
-              <Check class="h-3.5 w-3.5" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon-sm" class="h-7 w-7" aria-label="Cancel acceptance criteria edit" @click="cancelInlineEdit">
-              <X class="h-3.5 w-3.5" />
-            </Button>
-          </template>
-          <Button
-            v-else
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            class="h-7 w-7"
-            aria-label="Edit acceptance criteria"
-            @click="startInlineEdit('acceptanceCriteria')"
-          >
-            <Pencil class="h-3.5 w-3.5" />
+        <div v-if="canInlineEdit && hasAcceptanceCriteriaChanges" class="flex items-center gap-2">
+          <Button type="button" size="sm" aria-label="Save acceptance criteria" :disabled="savingField === 'acceptanceCriteria'" @click="saveInlineField('acceptanceCriteria')">
+            Save acceptance criteria
+          </Button>
+          <Button type="button" variant="ghost" size="sm" @click="resetInlineField('acceptanceCriteria')">
+            Reset
           </Button>
         </div>
       </div>
       <div v-show="isAcceptanceCriteriaOpen" class="mt-1 pl-4.5">
         <MarkdownEditor
-          v-if="activeInlineField === 'acceptanceCriteria'"
+          v-if="canInlineEdit"
           v-model="inlineForm.acceptanceCriteria"
           placeholder="What must be true for this to be done..."
           class="text-xs"
