@@ -178,30 +178,33 @@ body {
   -webkit-app-region: no-drag;
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Markdown base styles — shared by all markdown renderers
-   Use with modifier classes: .compact (issue previews) or .reader (full viewer)
-   ────────────────────────────────────────────────────────────────────────────── */
+/* Shared markdown rendering styles */
+
+.markdown-base {
+  @apply text-sm leading-6 text-foreground;
+}
 
 .markdown-base a {
-  color: #60a5fa;
-  @apply hover:underline cursor-pointer;
+  @apply text-primary underline underline-offset-2 cursor-pointer;
 }
 
 .markdown-base strong,
 .markdown-base b {
   @apply font-semibold;
-  color: #334155;
-}
-
-.dark .markdown-base strong,
-.dark .markdown-base b {
-  color: #cbd5e1;
 }
 
 .markdown-base em,
 .markdown-base i {
   @apply italic;
+}
+
+.markdown-base p {
+  @apply my-2 first:mt-0 last:mb-0;
+}
+
+.markdown-base ul,
+.markdown-base ol {
+  @apply my-2 pl-5;
 }
 
 .markdown-base ul {
@@ -212,176 +215,64 @@ body {
   @apply list-decimal;
 }
 
+.markdown-base li {
+  @apply my-1;
+}
+
+.markdown-base h1,
+.markdown-base h2,
+.markdown-base h3,
+.markdown-base h4,
+.markdown-base h5,
+.markdown-base h6 {
+  @apply mt-4 mb-2 font-semibold leading-tight first:mt-0;
+}
+
+.markdown-base h1 {
+  @apply text-lg;
+}
+
+.markdown-base h2 {
+  @apply text-base;
+}
+
+.markdown-base h3,
+.markdown-base h4,
+.markdown-base h5,
+.markdown-base h6 {
+  @apply text-sm;
+}
+
 .markdown-base code {
-  @apply bg-muted px-1 py-0.5 rounded font-mono;
-  font-size: 0.9em;
+  @apply rounded bg-muted px-1 py-0.5 font-mono text-[0.9em];
+}
+
+.markdown-base pre {
+  @apply my-3 overflow-x-auto rounded bg-muted p-3 text-sm;
 }
 
 .markdown-base pre code {
   @apply bg-transparent p-0;
 }
 
+.markdown-base blockquote {
+  @apply my-3 border-l-2 border-border pl-3 text-muted-foreground;
+}
+
+.markdown-base hr {
+  @apply my-4 border-border;
+}
+
 .markdown-base table {
-  @apply w-full my-2 border-collapse text-[inherit];
+  @apply my-3 w-full border-collapse text-[inherit];
 }
 
 .markdown-base th {
-  @apply text-left font-semibold px-2 py-1.5 border border-border bg-muted/50;
+  @apply border border-border bg-muted/50 px-2 py-1.5 text-left font-semibold;
 }
 
 .markdown-base td {
-  @apply px-2 py-1.5 border border-border;
-}
-
-.markdown-base tr:hover td {
-  @apply bg-muted/30;
-}
-
-/* ── Compact variant (IssuePreview, LinkifiedText, PrerequisitesCard) ──────── */
-
-.markdown-base.compact p {
-  @apply my-1 first:mt-0 last:mb-0;
-}
-
-.markdown-base.compact ul,
-.markdown-base.compact ol {
-  @apply my-1 pl-4;
-}
-
-.markdown-base.compact li {
-  @apply my-0.5;
-}
-
-.markdown-base.compact pre {
-  @apply bg-muted p-2 rounded my-1 overflow-x-auto;
-}
-
-.markdown-base.compact blockquote {
-  @apply border-l-2 border-muted-foreground/30 pl-3 my-1 italic text-muted-foreground;
-}
-
-.markdown-base.compact h1,
-.markdown-base.compact h2,
-.markdown-base.compact h3,
-.markdown-base.compact h4,
-.markdown-base.compact h5,
-.markdown-base.compact h6 {
-  @apply font-semibold mt-2 mb-1 first:mt-0;
-}
-
-.markdown-base.compact h1 {
-  @apply text-lg;
-  color: #93b4e0;
-}
-
-.markdown-base.compact h2 {
-  @apply text-base;
-  color: #7da8c9;
-}
-
-.markdown-base.compact h3 {
-  @apply text-sm;
-  color: #7db89e;
-}
-
-.markdown-base.compact h4 {
-  @apply text-sm;
-  color: #a599c4;
-}
-
-.markdown-base.compact h5,
-.markdown-base.compact h6 {
-  @apply text-sm;
-}
-
-.markdown-base.compact hr {
-  @apply my-2 border-muted;
-}
-
-/* ── Reader variant (MarkdownPreviewDialog — full document viewer) ─────────── */
-/* Inspired by GitHub/Obsidian: generous spacing, colored headers, clear hierarchy */
-
-.markdown-base.reader {
-  @apply text-base leading-7 text-foreground;
-}
-
-.markdown-base.reader p {
-  @apply my-3 first:mt-0 last:mb-0;
-}
-
-.markdown-base.reader ul,
-.markdown-base.reader ol {
-  @apply my-3 pl-6;
-}
-
-.markdown-base.reader li {
-  @apply my-1.5;
-}
-
-.markdown-base.reader code {
-  @apply bg-muted px-1.5 py-0.5 rounded font-mono text-[0.85em];
-}
-
-.markdown-base.reader pre {
-  @apply bg-muted p-4 rounded-lg my-4 overflow-x-auto text-sm leading-7;
-}
-
-.markdown-base.reader blockquote {
-  @apply border-l-3 border-sky-500/40 pl-4 my-4 italic text-muted-foreground;
-}
-
-.markdown-base.reader h1,
-.markdown-base.reader h2,
-.markdown-base.reader h3,
-.markdown-base.reader h4,
-.markdown-base.reader h5,
-.markdown-base.reader h6 {
-  @apply font-bold leading-tight first:mt-0;
-}
-
-.markdown-base.reader h1 {
-  @apply text-2xl mt-8 mb-4 pb-2 border-b border-border;
-  color: #93b4e0;
-}
-
-.markdown-base.reader h2 {
-  @apply text-xl mt-7 mb-3 pb-1.5 border-b border-border/50;
-  color: #7da8c9;
-}
-
-.markdown-base.reader h3 {
-  @apply text-lg mt-6 mb-2;
-  color: #7db89e;
-}
-
-.markdown-base.reader h4 {
-  @apply text-base mt-5 mb-2;
-  color: #a599c4;
-}
-
-.markdown-base.reader h5 {
-  @apply text-sm mt-4 mb-1.5;
-  color: #b0a0b8;
-}
-
-.markdown-base.reader h6 {
-  @apply text-sm mt-4 mb-1.5 text-muted-foreground;
-}
-
-.markdown-base.reader hr {
-  @apply my-6 border-border;
-}
-
-.markdown-base.reader table {
-  @apply w-full my-4 border-collapse text-sm;
-}
-
-.markdown-base.reader th {
-  @apply text-left font-semibold px-3 py-2 border border-border bg-muted/50;
-}
-
-.markdown-base.reader td {
-  @apply px-3 py-2 border border-border;
+  @apply border border-border px-2 py-1.5;
 }
 
 /* Search highlights in markdown modal */
