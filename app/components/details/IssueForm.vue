@@ -394,12 +394,11 @@ const attachFile = async () => {
 
         <div class="space-y-1">
           <Label for="acceptanceCriteria" class="text-[10px] uppercase tracking-wide text-muted-foreground">Acceptance Criteria</Label>
-          <Textarea
-            id="acceptanceCriteria"
+          <MarkdownEditor
             v-model="form.acceptanceCriteria"
             placeholder="What must be true for this to be done..."
-            rows="3"
             class="text-xs"
+            min-height-class="min-h-28"
           />
         </div>
 

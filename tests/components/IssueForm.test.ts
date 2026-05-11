@@ -153,4 +153,27 @@ describe('IssueForm', () => {
     expect(payload.title).toBe('Align editor')
     expect(payload.description).toBe('**bold**\n\n- item')
   })
+
+  it('emits markdown acceptance criteria content on save', async () => {
+    const wrapper = mount(IssueForm, {
+      props: {
+        isNew: true,
+        availableLabels: [],
+        availableEpics: [],
+      },
+    })
+
+    const editors = wrapper.findAll('[data-testid="markdown-editor"]')
+    expect(editors).toHaveLength(2)
+
+    await wrapper.get('#title').setValue('Ship inline edit')
+    await editors[1]!.setValue('- preserves markdown\n- saves inline')
+    await wrapper.get('form').trigger('submit.prevent')
+    await nextTick()
+
+    const payload = wrapper.emitted('save')?.[0]?.[0] as UpdateIssuePayload | undefined
+    expect(payload).toBeTruthy()
+    if (!payload) throw new Error('Expected save payload to be emitted')
+    expect(payload.acceptanceCriteria).toBe('- preserves markdown\n- saves inline')
+  })
 })

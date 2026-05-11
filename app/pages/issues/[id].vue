@@ -441,6 +441,7 @@ onMounted(async () => {
                   :readonly="currentIssue.status === 'closed'"
                   :available-issues="availableIssuesForDeps"
                   @navigate-to-issue="handleNavigateToIssue"
+                  @save-inline="handleSaveIssue"
                   @create-child="handleCreateChild"
                   @open-add-blocker="openAddBlockerDialog"
                   @remove-dependency="confirmRemoveDependency"

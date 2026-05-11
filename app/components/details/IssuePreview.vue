@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { X } from 'lucide-vue-next'
-import type { Issue } from '~/types/issue'
+import { computed, reactive, ref, watch } from 'vue'
+import { Check, Pencil, Plus, X } from 'lucide-vue-next'
+import type { Issue, UpdateIssuePayload } from '~/types/issue'
 import { Button } from '~/components/ui/button'
 import { LinkifiedText } from '~/components/ui/linkified-text'
+import { MarkdownEditor } from '~/components/ui/markdown-editor'
 import StatusBadge from '~/components/issues/StatusBadge.vue'
 import PriorityBadge from '~/components/issues/PriorityBadge.vue'
 import { extractNonImageRefs } from '~/utils/markdown'
@@ -25,7 +27,58 @@ const emit = defineEmits<{
   'create-child': [parentId: string]
   'open-add-blocker': [issueId: string]
   'remove-dependency': [issueId: string, blockerId: string]
+  'save-inline': [payload: UpdateIssuePayload]
 }>()
+
+type InlineField = 'description' | 'acceptanceCriteria' | null
+
+const inlineForm = reactive({
+  description: props.issue.description || '',
+  acceptanceCriteria: props.issue.acceptanceCriteria || '',
+})
+
+const activeInlineField = ref<InlineField>(null)
+
+watch(
+  () => props.issue,
+  (issue) => {
+    inlineForm.description = issue.description || ''
+    inlineForm.acceptanceCriteria = issue.acceptanceCriteria || ''
+    activeInlineField.value = null
+  },
+  { immediate: true }
+)
+
+const canInlineEdit = computed(() => !props.readonly)
+
+const startInlineEdit = (field: Exclude<InlineField, null>) => {
+  if (!canInlineEdit.value) return
+  inlineForm.description = props.issue.description || ''
+  inlineForm.acceptanceCriteria = props.issue.acceptanceCriteria || ''
+  const nextSections = {
+    ...previewSections.value,
+    [field]: true,
+  }
+  previewSections.value = nextSections
+  saveProjectValue('previewSections', nextSections)
+  activeInlineField.value = field
+}
+
+const cancelInlineEdit = () => {
+  inlineForm.description = props.issue.description || ''
+  inlineForm.acceptanceCriteria = props.issue.acceptanceCriteria || ''
+  activeInlineField.value = null
+}
+
+const saveInlineField = () => {
+  if (!activeInlineField.value) return
+
+  const field = activeInlineField.value
+  emit('save-inline', {
+    [field]: inlineForm[field],
+  })
+  activeInlineField.value = null
+}
 
 // Natural sort comparison for IDs (handles multi-digit numbers correctly)
 const naturalCompare = (a: string, b: string): number => {
@@ -189,47 +242,111 @@ const formatEstimate = (minutes: number) => {
   <div class="space-y-3">
     <!-- Description Section -->
     <div>
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('description')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isDescriptionOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+      <div class="flex items-center justify-between gap-2">
+        <button
+          class="flex items-center gap-1.5 text-left group"
+          @click="toggleSection('description')"
         >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Description</h4>
-      </button>
+          <svg
+            class="w-3 h-3 text-muted-foreground transition-transform"
+            :class="{ '-rotate-90': !isDescriptionOpen }"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Description</h4>
+        </button>
+        <div v-if="canInlineEdit" class="flex items-center gap-1">
+          <template v-if="activeInlineField === 'description'">
+            <Button type="button" variant="ghost" size="icon-sm" class="h-7 w-7" aria-label="Save description" @click="saveInlineField">
+              <Check class="h-3.5 w-3.5" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon-sm" class="h-7 w-7" aria-label="Cancel description edit" @click="cancelInlineEdit">
+              <X class="h-3.5 w-3.5" />
+            </Button>
+          </template>
+          <Button
+            v-else
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            class="h-7 w-7"
+            aria-label="Edit description"
+            @click="startInlineEdit('description')"
+          >
+            <Pencil class="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
       <div v-show="isDescriptionOpen" class="mt-1 pl-4.5">
-        <div class="text-xs"><LinkifiedText :text="issue.description" fallback="No description provided." /></div>
+        <MarkdownEditor
+          v-if="activeInlineField === 'description'"
+          v-model="inlineForm.description"
+          placeholder="Describe the issue..."
+          class="text-xs"
+          min-height-class="min-h-28"
+          :show-static-toolbar="false"
+          :show-bubble-toolbar="true"
+        />
+        <div v-else class="text-xs"><LinkifiedText :text="issue.description" fallback="No description provided." /></div>
       </div>
     </div>
 
-    <!-- Acceptance Criteria Section (only if exists) -->
-    <div v-if="issue.acceptanceCriteria">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('acceptanceCriteria')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isAcceptanceCriteriaOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+    <!-- Acceptance Criteria Section -->
+    <div v-if="issue.acceptanceCriteria || canInlineEdit">
+      <div class="flex items-center justify-between gap-2">
+        <button
+          class="flex items-center gap-1.5 text-left group"
+          @click="toggleSection('acceptanceCriteria')"
         >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Acceptance Criteria</h4>
-      </button>
+          <svg
+            class="w-3 h-3 text-muted-foreground transition-transform"
+            :class="{ '-rotate-90': !isAcceptanceCriteriaOpen }"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Acceptance Criteria</h4>
+        </button>
+        <div v-if="canInlineEdit" class="flex items-center gap-1">
+          <template v-if="activeInlineField === 'acceptanceCriteria'">
+            <Button type="button" variant="ghost" size="icon-sm" class="h-7 w-7" aria-label="Save acceptance criteria" @click="saveInlineField">
+              <Check class="h-3.5 w-3.5" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon-sm" class="h-7 w-7" aria-label="Cancel acceptance criteria edit" @click="cancelInlineEdit">
+              <X class="h-3.5 w-3.5" />
+            </Button>
+          </template>
+          <Button
+            v-else
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            class="h-7 w-7"
+            aria-label="Edit acceptance criteria"
+            @click="startInlineEdit('acceptanceCriteria')"
+          >
+            <Pencil class="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
       <div v-show="isAcceptanceCriteriaOpen" class="mt-1 pl-4.5">
-        <div class="text-xs"><LinkifiedText :text="issue.acceptanceCriteria" /></div>
+        <MarkdownEditor
+          v-if="activeInlineField === 'acceptanceCriteria'"
+          v-model="inlineForm.acceptanceCriteria"
+          placeholder="What must be true for this to be done..."
+          class="text-xs"
+          min-height-class="min-h-24"
+          :show-static-toolbar="false"
+          :show-bubble-toolbar="true"
+        />
+        <div v-else class="text-xs"><LinkifiedText :text="issue.acceptanceCriteria" fallback="No acceptance criteria yet." /></div>
       </div>
     </div>
 

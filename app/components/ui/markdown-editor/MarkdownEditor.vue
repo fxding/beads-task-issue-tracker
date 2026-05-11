@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
+import { BubbleMenu } from '@tiptap/vue-3/menus'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { Markdown } from '@tiptap/markdown'
+import type { Editor } from '@tiptap/core'
 import { common, createLowlight } from 'lowlight'
 import {
   Bold,
@@ -28,11 +30,15 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   class?: string
   minHeightClass?: string
+  showStaticToolbar?: boolean
+  showBubbleToolbar?: boolean
 }>(), {
   modelValue: '',
   placeholder: '',
   class: '',
   minHeightClass: 'min-h-32',
+  showStaticToolbar: true,
+  showBubbleToolbar: false,
 })
 
 const emit = defineEmits<{
@@ -96,6 +102,12 @@ function focusEditor() {
   editor.value?.commands.focus()
 }
 
+function handleContainerMouseDown(event: MouseEvent) {
+  if (event.target !== event.currentTarget) return
+  event.preventDefault()
+  focusEditor()
+}
+
 function toggleParagraph() {
   editor.value?.chain().focus().setParagraph().run()
 }
@@ -140,11 +152,111 @@ function setOrUnsetLink() {
 
   instance.chain().focus().extendMarkRange('link').setLink({ href: trimmed }).run()
 }
+
+function shouldShowBubbleMenu({ editor, from, to }: { editor: Editor; from: number; to: number }) {
+  return props.showBubbleToolbar
+    && editor.isEditable
+    && from !== to
+    && !editor.isActive('codeBlock')
+}
 </script>
 
 <template>
   <div :class="cn('rounded-md border border-input bg-transparent shadow-xs', props.class)">
-    <div class="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1.5">
+    <BubbleMenu
+      v-if="editor && props.showBubbleToolbar"
+      :editor="editor"
+      :should-show="shouldShowBubbleMenu"
+      :tippy-options="{ duration: 100, placement: 'top' }"
+    >
+      <div class="flex flex-wrap items-center gap-1 rounded-md border border-border bg-background/95 p-1 shadow-md backdrop-blur">
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :class="editor?.isActive('paragraph') ? 'bg-accent text-accent-foreground' : ''"
+          @click="toggleParagraph"
+        >
+          <Pilcrow class="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :class="editor?.isActive('heading', { level: 1 }) ? 'bg-accent text-accent-foreground' : ''"
+          @click="toggleHeading(1)"
+        >
+          <Heading1 class="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :class="editor?.isActive('heading', { level: 2 }) ? 'bg-accent text-accent-foreground' : ''"
+          @click="toggleHeading(2)"
+        >
+          <Heading2 class="size-3.5" />
+        </Button>
+        <div class="mx-1 h-4 w-px bg-border" />
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :class="editor?.isActive('bold') ? 'bg-accent text-accent-foreground' : ''"
+          @click="toggleBold"
+        >
+          <Bold class="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :class="editor?.isActive('italic') ? 'bg-accent text-accent-foreground' : ''"
+          @click="toggleItalic"
+        >
+          <Italic class="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :class="editor?.isActive('bulletList') ? 'bg-accent text-accent-foreground' : ''"
+          @click="toggleBulletList"
+        >
+          <List class="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :class="editor?.isActive('orderedList') ? 'bg-accent text-accent-foreground' : ''"
+          @click="toggleOrderedList"
+        >
+          <ListOrdered class="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :class="editor?.isActive('blockquote') ? 'bg-accent text-accent-foreground' : ''"
+          @click="toggleBlockquote"
+        >
+          <Quote class="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          :disabled="!canToggleLink"
+          :class="editor?.isActive('link') ? 'bg-accent text-accent-foreground' : ''"
+          @click="setOrUnsetLink"
+        >
+          <LinkIcon class="size-3.5" />
+        </Button>
+      </div>
+    </BubbleMenu>
+
+    <div v-if="props.showStaticToolbar" class="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1.5">
       <Button
         type="button"
         size="icon-sm"
@@ -232,7 +344,7 @@ function setOrUnsetLink() {
 
     <div
       :class="cn('cursor-text px-3 py-2', props.minHeightClass)"
-      @mousedown.prevent="focusEditor"
+      @mousedown="handleContainerMouseDown"
     >
       <EditorContent :editor="editor" />
     </div>
