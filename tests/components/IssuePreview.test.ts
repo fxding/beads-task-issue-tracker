@@ -65,22 +65,6 @@ vi.mock('~/components/issues/PriorityBadge.vue', () => ({
   }),
 }))
 
-vi.stubGlobal('useProjectStorage', () => ref({
-  description: true,
-  parent: true,
-  children: true,
-  dependencies: true,
-  externalRef: true,
-  estimate: true,
-  designNotes: true,
-  acceptanceCriteria: true,
-  workingNotes: true,
-  metadata: true,
-  specId: true,
-}))
-
-vi.stubGlobal('saveProjectValue', vi.fn())
-
 const issue: Issue = {
   id: 'beads-task-issue-tracker-lnw',
   title: 'Inline edit editor',
@@ -96,6 +80,23 @@ const issue: Issue = {
 }
 
 describe('IssuePreview', () => {
+  it('shows section content without collapse toggles', () => {
+    const wrapper = mount(IssuePreview, {
+      props: {
+        issue,
+        readonly: false,
+        availableIssues: [],
+      },
+    })
+
+    expect(wrapper.text()).toContain('Description')
+    expect(wrapper.text()).toContain('Original description')
+    expect(wrapper.text()).toContain('Acceptance Criteria')
+    expect(wrapper.text()).toContain('- original criteria')
+    expect(wrapper.findAll('button').some(node => node.text().includes('Description'))).toBe(false)
+    expect(wrapper.findAll('button').some(node => node.text().includes('Acceptance Criteria'))).toBe(false)
+  })
+
   it('emits inline description updates', async () => {
     const wrapper = mount(IssuePreview, {
       props: {
