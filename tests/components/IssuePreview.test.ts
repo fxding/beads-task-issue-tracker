@@ -65,22 +65,6 @@ vi.mock('~/components/issues/PriorityBadge.vue', () => ({
   }),
 }))
 
-vi.stubGlobal('useProjectStorage', () => ref({
-  description: true,
-  parent: true,
-  children: true,
-  dependencies: true,
-  externalRef: true,
-  estimate: true,
-  designNotes: true,
-  acceptanceCriteria: true,
-  workingNotes: true,
-  metadata: true,
-  specId: true,
-}))
-
-vi.stubGlobal('saveProjectValue', vi.fn())
-
 const issue: Issue = {
   id: 'beads-task-issue-tracker-lnw',
   title: 'Inline edit editor',
@@ -96,6 +80,24 @@ const issue: Issue = {
 }
 
 describe('IssuePreview', () => {
+  it('shows section content without collapse toggles', () => {
+    const wrapper = mount(IssuePreview, {
+      props: {
+        issue,
+        readonly: false,
+        availableIssues: [],
+      },
+    })
+
+    const editors = wrapper.findAll('[data-testid="inline-markdown-editor"]')
+    expect(wrapper.text()).toContain('Description')
+    expect(wrapper.text()).toContain('Acceptance Criteria')
+    expect((editors[0].element as HTMLTextAreaElement).value).toBe('Original description')
+    expect((editors[1].element as HTMLTextAreaElement).value).toBe('- original criteria')
+    expect(wrapper.findAll('button').some(node => node.text().includes('Description'))).toBe(false)
+    expect(wrapper.findAll('button').some(node => node.text().includes('Acceptance Criteria'))).toBe(false)
+  })
+
   it('emits inline description updates', async () => {
     const wrapper = mount(IssuePreview, {
       props: {
@@ -107,7 +109,7 @@ describe('IssuePreview', () => {
 
     const editor = wrapper.get('[data-testid="inline-markdown-editor"]')
     await editor.setValue('Updated **markdown** description')
-    await wrapper.get('button[aria-label="Save description"]').trigger('click')
+    await wrapper.get('button').trigger('click')
     await nextTick()
 
     const payload = wrapper.emitted('save-inline')?.[0]?.[0] as UpdateIssuePayload | undefined
@@ -123,15 +125,15 @@ describe('IssuePreview', () => {
       },
     })
 
-    await wrapper.get('[aria-label="Edit acceptance criteria"]').trigger('click')
-    const editor = wrapper.get('[data-testid="inline-markdown-editor"]')
+    const editor = wrapper.findAll('[data-testid="inline-markdown-editor"]')[1]
     await editor.setValue('- updated\n- criteria')
-    await wrapper.get('[aria-label="Save acceptance criteria"]').trigger('click')
+    await wrapper.findAll('button').find(node => node.text() === 'Save acceptance criteria')?.trigger('click')
     await nextTick()
 
     const payload = wrapper.emitted('save-inline')?.[0]?.[0] as UpdateIssuePayload | undefined
     expect(payload).toEqual({ acceptanceCriteria: '- updated\n- criteria' })
   })
+
   it('shows inline editors without edit icon buttons', () => {
     const wrapper = mount(IssuePreview, {
       props: {
@@ -142,8 +144,7 @@ describe('IssuePreview', () => {
     })
 
     expect(wrapper.findAll('[data-testid="inline-markdown-editor"]')).toHaveLength(2)
-    expect(wrapper.find('[aria-label="Edit description"]').exists()).toBe(false)
-    expect(wrapper.find('[aria-label="Edit acceptance criteria"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Edit description')
+    expect(wrapper.text()).not.toContain('Edit acceptance criteria')
   })
-
 })

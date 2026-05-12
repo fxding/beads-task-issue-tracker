@@ -151,61 +151,6 @@ const handleRemoveDependency = (id: string, section: 'blockedBy' | 'blocks') => 
   }
 }
 
-// Collapsible section states (persisted per project, all open by default)
-interface PreviewCollapsedState {
-  description: boolean
-  parent: boolean
-  children: boolean
-  dependencies: boolean
-  externalRef: boolean
-  estimate: boolean
-  designNotes: boolean
-  acceptanceCriteria: boolean
-  workingNotes: boolean
-  metadata: boolean
-  specId: boolean
-}
-
-const defaultCollapsedState: PreviewCollapsedState = {
-  description: true,
-  parent: true,
-  children: true,
-  dependencies: true,
-  externalRef: true,
-  estimate: true,
-  designNotes: true,
-  acceptanceCriteria: true,
-  workingNotes: true,
-  metadata: true,
-  specId: true,
-}
-
-const previewSections = useProjectStorage<PreviewCollapsedState>('previewSections', defaultCollapsedState)
-
-// Toggle functions for each section
-const toggleSection = (section: keyof PreviewCollapsedState) => {
-  const newValue = {
-    ...previewSections.value,
-    [section]: !previewSections.value[section],
-  }
-  previewSections.value = newValue
-  // Explicitly save since watcher doesn't trigger reliably
-  saveProjectValue('previewSections', newValue)
-}
-
-// Direct getters for template (no computed writable - better reactivity)
-const isDescriptionOpen = computed(() => previewSections.value.description)
-const isParentOpen = computed(() => previewSections.value.parent)
-const isChildrenOpen = computed(() => previewSections.value.children)
-const isDependenciesOpen = computed(() => previewSections.value.dependencies)
-const isExternalRefOpen = computed(() => previewSections.value.externalRef)
-const isEstimateOpen = computed(() => previewSections.value.estimate)
-const isDesignNotesOpen = computed(() => previewSections.value.designNotes)
-const isAcceptanceCriteriaOpen = computed(() => previewSections.value.acceptanceCriteria)
-const isWorkingNotesOpen = computed(() => previewSections.value.workingNotes)
-const isMetadataOpen = computed(() => previewSections.value.metadata)
-const isSpecIdOpen = computed(() => previewSections.value.specId)
-
 const formatMetadata = (raw: string): string => {
   try {
     return JSON.stringify(JSON.parse(raw), null, 2)
@@ -239,24 +184,9 @@ const formatEstimate = (minutes: number) => {
     <!-- Description Section -->
     <div>
       <div class="flex items-center justify-between gap-2">
-        <button
-          class="flex items-center gap-1.5 text-left group"
-          @click="toggleSection('description')"
-        >
-          <svg
-            class="w-3 h-3 text-muted-foreground transition-transform"
-            :class="{ '-rotate-90': !isDescriptionOpen }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Description</h4>
-        </button>
+        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Description</h4>
         <div v-if="canInlineEdit && hasDescriptionChanges" class="flex items-center gap-2">
-          <Button type="button" size="sm" aria-label="Save description" :disabled="savingField === 'description'" @click="saveInlineField('description')">
+          <Button type="button" size="sm" :disabled="savingField === 'description'" @click="saveInlineField('description')">
             Save description
           </Button>
           <Button type="button" variant="ghost" size="sm" @click="resetInlineField('description')">
@@ -264,7 +194,7 @@ const formatEstimate = (minutes: number) => {
           </Button>
         </div>
       </div>
-      <div v-show="isDescriptionOpen" class="mt-1 pl-4.5">
+      <div class="mt-1 pl-4.5">
         <MarkdownEditor
           v-if="canInlineEdit"
           v-model="inlineForm.description"
@@ -281,24 +211,9 @@ const formatEstimate = (minutes: number) => {
     <!-- Acceptance Criteria Section -->
     <div v-if="issue.acceptanceCriteria || canInlineEdit">
       <div class="flex items-center justify-between gap-2">
-        <button
-          class="flex items-center gap-1.5 text-left group"
-          @click="toggleSection('acceptanceCriteria')"
-        >
-          <svg
-            class="w-3 h-3 text-muted-foreground transition-transform"
-            :class="{ '-rotate-90': !isAcceptanceCriteriaOpen }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Acceptance Criteria</h4>
-        </button>
+        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Acceptance Criteria</h4>
         <div v-if="canInlineEdit && hasAcceptanceCriteriaChanges" class="flex items-center gap-2">
-          <Button type="button" size="sm" aria-label="Save acceptance criteria" :disabled="savingField === 'acceptanceCriteria'" @click="saveInlineField('acceptanceCriteria')">
+          <Button type="button" size="sm" :disabled="savingField === 'acceptanceCriteria'" @click="saveInlineField('acceptanceCriteria')">
             Save acceptance criteria
           </Button>
           <Button type="button" variant="ghost" size="sm" @click="resetInlineField('acceptanceCriteria')">
@@ -306,7 +221,7 @@ const formatEstimate = (minutes: number) => {
           </Button>
         </div>
       </div>
-      <div v-show="isAcceptanceCriteriaOpen" class="mt-1 pl-4.5">
+      <div class="mt-1 pl-4.5">
         <MarkdownEditor
           v-if="canInlineEdit"
           v-model="inlineForm.acceptanceCriteria"
@@ -322,23 +237,8 @@ const formatEstimate = (minutes: number) => {
 
     <!-- Parent Section (only if exists) -->
     <div v-if="issue.parent">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('parent')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isParentOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Parent</h4>
-      </button>
-      <div v-show="isParentOpen" class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Parent</h4>
+      <div class="mt-1 pl-4.5">
         <div
           class="flex items-center justify-between gap-2 py-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1"
           @click="emit('navigate-to-issue', issue.parent.id)"
@@ -358,23 +258,10 @@ const formatEstimate = (minutes: number) => {
     <!-- Children Section (for epics, always show; for others, only if has children) -->
     <div v-if="issue.type === 'epic' || issue.children?.length">
       <div class="flex items-center justify-between">
-        <button
-          class="flex items-center gap-1.5 text-left group"
-          @click="toggleSection('children')"
-        >
-          <svg
-            class="w-3 h-3 text-muted-foreground transition-transform"
-            :class="{ '-rotate-90': !isChildrenOpen }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Children</h4>
+        <div class="flex items-center gap-1.5">
+          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Children</h4>
           <span v-if="issue.children?.length" class="text-[10px] text-muted-foreground">({{ issue.children.length }})</span>
-        </button>
+        </div>
         <Button
           v-if="issue.type === 'epic' && !readonly"
           type="button"
@@ -386,7 +273,7 @@ const formatEstimate = (minutes: number) => {
           Create child
         </Button>
       </div>
-      <div v-show="isChildrenOpen" class="mt-1 pl-4.5 space-y-0.5">
+      <div class="mt-1 pl-4.5 space-y-0.5">
         <template v-if="sortedChildren.length">
           <div
             v-for="child in sortedChildren"
@@ -410,26 +297,11 @@ const formatEstimate = (minutes: number) => {
 
     <!-- External Reference Section (only if exists) -->
     <div v-if="nonImageRefs.length > 0">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('externalRef')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isExternalRefOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">
+      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
           External Reference
           <span class="text-muted-foreground">({{ nonImageRefs.length }})</span>
-        </h4>
-      </button>
-      <div v-show="isExternalRefOpen" class="mt-1 pl-4.5 space-y-1">
+      </h4>
+      <div class="mt-1 pl-4.5 space-y-1">
         <p v-for="(ref, index) in nonImageRefs" :key="index" class="text-xs break-all">
           <LinkifiedText :text="ref" />
         </p>
@@ -438,23 +310,8 @@ const formatEstimate = (minutes: number) => {
 
     <!-- Dependencies Section -->
     <div v-if="hasDependencies">
-      <button
-        class="flex items-center gap-1.5 text-left group"
-        @click="toggleSection('dependencies')"
-      >
-          <svg
-            class="w-3 h-3 text-muted-foreground transition-transform"
-            :class="{ '-rotate-90': !isDependenciesOpen }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Dependencies</h4>
-      </button>
-      <div v-show="isDependenciesOpen" class="mt-1 pl-4.5 space-y-2">
+      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Dependencies</h4>
+      <div class="mt-1 pl-4.5 space-y-2">
         <!-- Blocked By -->
         <div v-if="issue.blockedBy?.length">
           <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocked By</h5>
@@ -505,46 +362,16 @@ const formatEstimate = (minutes: number) => {
 
     <!-- Estimate Section (only if exists) -->
     <div v-if="issue.estimateMinutes">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('estimate')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isEstimateOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Estimate</h4>
-      </button>
-      <div v-show="isEstimateOpen" class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Estimate</h4>
+      <div class="mt-1 pl-4.5">
         <p class="text-xs">{{ formatEstimate(issue.estimateMinutes) }}</p>
       </div>
     </div>
 
     <!-- Design Notes Section (only if exists) -->
     <div v-if="issue.designNotes">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('designNotes')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isDesignNotesOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Design Notes</h4>
-      </button>
-      <div v-show="isDesignNotesOpen" class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Design Notes</h4>
+      <div class="mt-1 pl-4.5">
         <div class="text-xs"><LinkifiedText :text="issue.designNotes" /></div>
       </div>
     </div>
@@ -552,69 +379,24 @@ const formatEstimate = (minutes: number) => {
 
     <!-- Working Notes Section (only if exists) -->
     <div v-if="issue.workingNotes">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('workingNotes')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isWorkingNotesOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Working Notes</h4>
-      </button>
-      <div v-show="isWorkingNotesOpen" class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Working Notes</h4>
+      <div class="mt-1 pl-4.5">
         <div class="text-xs"><LinkifiedText :text="issue.workingNotes" /></div>
       </div>
     </div>
 
     <!-- Metadata Section (only if exists, read-only JSON) -->
     <div v-if="issue.metadata">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('metadata')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isMetadataOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Metadata</h4>
-      </button>
-      <div v-show="isMetadataOpen" class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Metadata</h4>
+      <div class="mt-1 pl-4.5">
         <pre class="text-xs bg-muted/50 rounded p-2 overflow-x-auto whitespace-pre-wrap break-words">{{ formatMetadata(issue.metadata) }}</pre>
       </div>
     </div>
 
     <!-- Spec ID Section (only if exists) -->
     <div v-if="issue.specId">
-      <button
-        class="flex items-center gap-1.5 w-full text-left group"
-        @click="toggleSection('specId')"
-      >
-        <svg
-          class="w-3 h-3 text-muted-foreground transition-transform"
-          :class="{ '-rotate-90': !isSpecIdOpen }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">Spec ID</h4>
-      </button>
-      <div v-show="isSpecIdOpen" class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Spec ID</h4>
+      <div class="mt-1 pl-4.5">
         <p class="text-xs font-mono">{{ issue.specId }}</p>
       </div>
     </div>
