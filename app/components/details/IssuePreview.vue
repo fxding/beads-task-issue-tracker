@@ -316,10 +316,9 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
     />
 
     <Tabs
-      class="rounded-xl border border-border/70 bg-card/60 p-3"
       default-value="comments"
     >
-      <TabsList class="grid w-full grid-cols-3">
+      <TabsList class="">
         <TabsTrigger value="comments">{{ commentsTabLabel }}</TabsTrigger>
         <TabsTrigger value="children">{{ childrenTabLabel }}</TabsTrigger>
         <TabsTrigger value="dependencies">{{ dependenciesTabLabel }}</TabsTrigger>

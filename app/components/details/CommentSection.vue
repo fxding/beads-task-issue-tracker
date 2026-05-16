@@ -87,7 +87,7 @@ const handleSubmit = () => {
     </button>
 
     <div v-show="embedded || isCommentsOpen" :class="embedded ? 'space-y-3' : 'pl-4.5 space-y-3'">
-      <ScrollArea v-if="sortedComments.length > 0" class="h-40">
+      <ScrollArea v-if="sortedComments.length > 0">
         <div class="space-y-3 pr-4">
           <div
             v-for="comment in sortedComments"
