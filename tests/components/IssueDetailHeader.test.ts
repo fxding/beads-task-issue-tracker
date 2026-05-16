@@ -25,7 +25,7 @@ vi.mock('~/components/ui/input', () => ({
     name: 'InputStub',
     inheritAttrs: false,
     props: ['modelValue', 'readonly'],
-    emits: ['update:modelValue', 'keydown', 'blur'],
+    emits: ['update:modelValue', 'keydown'],
     setup(props, { emit, attrs }) {
       return () => h('input', {
         ...attrs,
@@ -33,7 +33,6 @@ vi.mock('~/components/ui/input', () => ({
         readonly: props.readonly,
         onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value),
         onKeydown: (event: KeyboardEvent) => emit('keydown', event),
-        onBlur: () => emit('blur'),
       })
     },
   }),
@@ -54,7 +53,7 @@ const issue: Issue = {
 }
 
 describe('IssueDetailHeader', () => {
-  it('auto-saves the title on blur only after the title changes', async () => {
+  it('saves the title when enter is pressed after the title changes', async () => {
     const wrapper = mount(IssueDetailHeader, {
       props: {
         selectedIssue: issue,
@@ -64,7 +63,7 @@ describe('IssueDetailHeader', () => {
 
     const input = wrapper.get('[aria-label="Issue title"]')
     await input.setValue('Ship inline editing')
-    await input.trigger('blur')
+    await input.trigger('keydown', { key: 'Enter', preventDefault: () => {} })
 
     const payload = wrapper.emitted('save-inline')?.[0]?.[0] as UpdateIssuePayload | undefined
     expect(payload).toEqual({ title: 'Ship inline editing' })
