@@ -52,7 +52,7 @@ const handleTitleKeydown = (event: KeyboardEvent) => {
     <Input
       v-model="title"
       :readonly="readonly"
-      class="border-0 bg-transparent px-0 font-semibold shadow-none focus-visible:ring-0"
+      class="border-0 bg-transparent! px-0 font-semibold shadow-none focus-visible:ring-0"
       aria-label="Issue title"
       @keydown="handleTitleKeydown"
     />
