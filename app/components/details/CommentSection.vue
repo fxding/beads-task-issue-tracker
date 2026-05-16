@@ -102,18 +102,18 @@ const handleSubmit = () => {
 
             <div class="flex-1 space-y-0.5">
               <div class="flex items-center gap-2">
-                <span class="text-xs font-medium">{{ comment.author }}</span>
-                <span class="text-[10px] text-muted-foreground">
+                <span class="text-sm font-medium">{{ comment.author }}</span>
+                <span class="text-sm text-muted-foreground">
                   {{ formatDate(comment.createdAt) }}
                 </span>
               </div>
-              <p class="text-xs whitespace-pre-wrap"><LinkifiedText :text="comment.content" /></p>
+              <p class="text-sm whitespace-pre-wrap"><LinkifiedText :text="comment.content" /></p>
             </div>
           </div>
         </div>
       </ScrollArea>
 
-      <div v-else class="text-center text-muted-foreground text-xs py-3">
+      <div v-else class="py-3 text-center text-sm text-muted-foreground">
         No comments yet
       </div>
 
@@ -122,7 +122,7 @@ const handleSubmit = () => {
           v-model="newComment"
           placeholder="Add a comment..."
           rows="2"
-          class="text-xs"
+          class="text-sm"
         />
         <div class="flex justify-end">
           <Button type="submit" size="sm" :disabled="!newComment.trim()">

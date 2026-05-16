@@ -207,7 +207,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
           :show-bubble-toolbar="true"
           @blur="saveInlineField('description')"
         />
-        <div v-else class="text-xs"><LinkifiedText :text="issue.description" fallback="No description provided." /></div>
+        <div v-else class="text-sm"><LinkifiedText :text="issue.description" fallback="No description provided." /></div>
       </div>
     </div>
 
@@ -225,13 +225,13 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
           v-if="canInlineEdit"
           v-model="inlineForm.acceptanceCriteria"
           placeholder="What must be true for this to be done..."
-          class="text-xs"
+          class="text-sm"
           min-height-class="min-h-24"
           :show-static-toolbar="false"
           :show-bubble-toolbar="true"
           @blur="saveInlineField('acceptanceCriteria')"
         />
-        <div v-else class="text-xs"><LinkifiedText :text="issue.acceptanceCriteria" fallback="No acceptance criteria yet." /></div>
+        <div v-else class="text-sm"><LinkifiedText :text="issue.acceptanceCriteria" fallback="No acceptance criteria yet." /></div>
       </div>
     </div>
 
@@ -244,8 +244,8 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
           @click="emit('navigate-to-issue', issue.parent.id)"
         >
           <div class="flex items-center gap-2 min-w-0">
-            <span class="shrink-0 font-mono text-xs text-foreground hover:underline">{{ issue.parent.id }}</span>
-            <span class="text-xs truncate">{{ issue.parent.title }}</span>
+            <span class="shrink-0 font-mono text-sm text-foreground hover:underline">{{ issue.parent.id }}</span>
+            <span class="truncate text-sm">{{ issue.parent.title }}</span>
           </div>
           <div class="flex items-center gap-1 shrink-0">
             <StatusBadge :status="issue.parent.status" size="sm" />
@@ -262,7 +262,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
           <span class="text-muted-foreground">({{ nonImageRefs.length }})</span>
       </h4>
       <div class="space-y-1">
-        <p v-for="(ref, index) in nonImageRefs" :key="index" class="text-xs break-all">
+        <p v-for="(ref, index) in nonImageRefs" :key="index" class="text-sm break-all">
           <LinkifiedText :text="ref" />
         </p>
       </div>
@@ -272,7 +272,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
     <div v-if="issue.estimateMinutes">
       <h4 class="text-[10px] font-bold uppercase tracking-wide">Estimate</h4>
       <div >
-        <p class="text-xs">{{ formatEstimate(issue.estimateMinutes) }}</p>
+        <p class="text-sm">{{ formatEstimate(issue.estimateMinutes) }}</p>
       </div>
     </div>
 
@@ -280,7 +280,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
     <div v-if="issue.designNotes">
       <h4 class="text-[10px] font-bold uppercase tracking-wide">Design Notes</h4>
       <div >
-        <div class="text-xs"><LinkifiedText :text="issue.designNotes" /></div>
+        <div class="text-sm"><LinkifiedText :text="issue.designNotes" /></div>
       </div>
     </div>
 
@@ -289,7 +289,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
     <div v-if="issue.workingNotes">
       <h4 class="text-[10px] font-bold uppercase tracking-wide">Working Notes</h4>
       <div >
-        <div class="text-xs"><LinkifiedText :text="issue.workingNotes" /></div>
+        <div class="text-sm"><LinkifiedText :text="issue.workingNotes" /></div>
       </div>
     </div>
 
@@ -297,7 +297,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
     <div v-if="issue.metadata">
       <h4 class="text-[10px] font-bold uppercase tracking-wide">Metadata</h4>
       <div >
-        <pre class="text-xs bg-muted/50 rounded p-2 overflow-x-auto whitespace-pre-wrap break-words">{{ formatMetadata(issue.metadata) }}</pre>
+        <pre class="overflow-x-auto whitespace-pre-wrap break-words rounded bg-muted/50 p-2 text-sm">{{ formatMetadata(issue.metadata) }}</pre>
       </div>
     </div>
 
@@ -305,7 +305,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
     <div v-if="issue.specId">
       <h4 class="text-[10px] font-bold uppercase tracking-wide">Spec ID</h4>
       <div >
-        <p class="text-xs font-mono">{{ issue.specId }}</p>
+        <p class="font-mono text-sm">{{ issue.specId }}</p>
       </div>
     </div>
 
@@ -358,8 +358,8 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
               @click="emit('navigate-to-issue', child.id)"
             >
               <div class="flex items-center gap-2 min-w-0">
-                <span class="shrink-0 font-mono text-xs text-foreground hover:underline">{{ getShortId(child.id) }}</span>
-                <span class="text-xs truncate">{{ child.title }}</span>
+                <span class="shrink-0 font-mono text-sm text-foreground hover:underline">{{ getShortId(child.id) }}</span>
+                <span class="truncate text-sm">{{ child.title }}</span>
               </div>
               <div class="flex items-center gap-1 shrink-0">
                 <StatusBadge :status="child.status" size="sm" />
@@ -367,7 +367,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
               </div>
             </div>
           </template>
-          <p v-else class="text-xs text-muted-foreground">No children yet</p>
+          <p v-else class="text-sm text-muted-foreground">No children yet</p>
         </div>
       </TabsContent>
 
@@ -382,8 +382,8 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
                 class="group/dep -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
                 @click="emit('navigate-to-issue', id)"
               >
-                <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
-                <span v-if="getIssueTitle(id)" class="truncate text-xs text-muted-foreground">{{ getIssueTitle(id) }}</span>
+                <span :class="['shrink-0 font-mono text-sm hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
+                <span v-if="getIssueTitle(id)" class="truncate text-sm text-muted-foreground">{{ getIssueTitle(id) }}</span>
                 <span
                   v-if="!readonly"
                   class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
@@ -404,8 +404,8 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
                 class="group/dep -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
                 @click="emit('navigate-to-issue', id)"
               >
-                <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
-                <span v-if="getIssueTitle(id)" class="truncate text-xs text-muted-foreground">{{ getIssueTitle(id) }}</span>
+                <span :class="['shrink-0 font-mono text-sm hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
+                <span v-if="getIssueTitle(id)" class="truncate text-sm text-muted-foreground">{{ getIssueTitle(id) }}</span>
                 <span
                   v-if="!readonly"
                   class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
@@ -417,7 +417,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
             </div>
           </div>
         </div>
-        <div v-else class="py-3 text-center text-xs text-muted-foreground">
+        <div v-else class="py-3 text-center text-sm text-muted-foreground">
           No dependencies yet
         </div>
       </TabsContent>
