@@ -2,8 +2,63 @@
  * Pure helper functions for issue data manipulation.
  * Extracted from useIssues composable for testability.
  */
-import type { Issue, DashboardStats, IssueType, IssuePriority } from '~/types/issue'
+import type { Issue, DashboardStats, IssueType, IssuePriority, IssueStatus } from '~/types/issue'
 import type { IssueGroup } from '~/composables/useIssues'
+
+export interface BoardColumnDefinition {
+  id: BoardColumnId
+  label: string
+  statuses: IssueStatus[]
+  description: string
+}
+
+export type BoardColumnId = 'backlog' | 'in_progress' | 'blocked' | 'done'
+
+export interface BoardColumn {
+  definition: BoardColumnDefinition
+  issues: Issue[]
+  count: number
+}
+
+export const BOARD_COLUMNS: BoardColumnDefinition[] = [
+  {
+    id: 'backlog',
+    label: 'Backlog',
+    statuses: ['open', 'deferred', 'pinned', 'hooked'],
+    description: 'Ready to plan, triage, or pull into active work.',
+  },
+  {
+    id: 'in_progress',
+    label: 'In Progress',
+    statuses: ['in_progress'],
+    description: 'Work currently being executed.',
+  },
+  {
+    id: 'blocked',
+    label: 'Blocked',
+    statuses: ['blocked'],
+    description: 'Waiting on an external unblocker before work can continue.',
+  },
+  {
+    id: 'done',
+    label: 'Done',
+    statuses: ['closed'],
+    description: 'Completed issues kept visible for board follow-through.',
+  },
+]
+
+const BOARD_STATUS_TO_COLUMN = new Map<IssueStatus, BoardColumnId>(
+  BOARD_COLUMNS.flatMap(column => column.statuses.map(status => [status, column.id] as const)),
+)
+
+export function getBoardColumnForStatus(status: IssueStatus): BoardColumnId | null {
+  return BOARD_STATUS_TO_COLUMN.get(status) ?? null
+}
+
+export function getBoardPrimaryStatus(columnId: BoardColumnId): IssueStatus {
+  const column = BOARD_COLUMNS.find(entry => entry.id === columnId)
+  return column?.statuses[0] ?? 'open'
+}
 
 /**
  * Deduplicate issues by ID, keeping the most recently updated version.
@@ -400,4 +455,49 @@ export function computeReadyIssues(issues: Issue[]): Issue[] {
   return issues.filter(i =>
     i.status === 'open' && (!i.blockedBy || i.blockedBy.length === 0),
   )
+}
+
+function compareBoardIssues(a: Issue, b: Issue): number {
+  const priorityDiff = (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99)
+  if (priorityDiff !== 0) return priorityDiff
+
+  const updatedDiff = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  if (updatedDiff !== 0) return updatedDiff
+
+  return naturalCompare(a.id.toLowerCase(), b.id.toLowerCase())
+}
+
+/**
+ * Group issues into explicit board columns.
+ *
+ * Status treatment:
+ * - open / deferred / pinned / hooked → backlog
+ * - in_progress → in progress
+ * - blocked → blocked
+ * - closed → done
+ * - tombstone → excluded from the board
+ */
+export function groupIssuesForBoard(issues: Issue[]): BoardColumn[] {
+  const buckets = new Map<BoardColumnId, Issue[]>()
+
+  for (const column of BOARD_COLUMNS) {
+    buckets.set(column.id, [])
+  }
+
+  for (const issue of issues) {
+    const columnId = getBoardColumnForStatus(issue.status)
+    if (!columnId) continue
+
+    buckets.get(columnId)!.push(issue)
+  }
+
+  return BOARD_COLUMNS.map(definition => {
+    const columnIssues = [...(buckets.get(definition.id) ?? [])].sort(compareBoardIssues)
+
+    return {
+      definition,
+      issues: columnIssues,
+      count: columnIssues.length,
+    }
+  })
 }

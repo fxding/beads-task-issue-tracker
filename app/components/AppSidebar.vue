@@ -78,7 +78,7 @@ const viewItems: Array<{
 }> = [
   { id: 'table', label: 'Table', description: 'Browse the full issue grid.', icon: TableProperties },
   { id: 'list', label: 'List', description: 'Scan ready, pinned, and active work.', icon: ListTodo },
-  { id: 'board', label: 'Board', description: 'Track the planned kanban surface.', icon: KanbanSquare, badge: 'Plan' },
+  { id: 'board', label: 'Board', description: 'Move issues across kanban lanes.', icon: KanbanSquare },
   { id: 'stats', label: 'Stats', description: 'Watch project health and trends.', icon: Activity },
 ]
 

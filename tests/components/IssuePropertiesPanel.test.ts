@@ -142,7 +142,7 @@ describe('IssuePropertiesPanel', () => {
       },
     })
 
-    const statusTrigger = wrapper.findAllComponents({ name: 'DropdownMenuTriggerStub' })[0]
+    const statusTrigger = wrapper.findComponent({ name: 'DropdownMenuTriggerStub' })
     expect(statusTrigger.attributes('data-disabled')).toBe('false')
   })
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Issue } from '~/types/issue'
+import type { Issue, IssueStatus } from '~/types/issue'
+import type { BoardColumnId } from '~/utils/issue-helpers'
 
 // Layout components
 import AppSidebar from '~/components/AppSidebar.vue'
@@ -41,6 +42,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '~/components/ui/sidebar'
+import { getBoardPrimaryStatus, groupIssuesForBoard } from '~/utils/issue-helpers'
 import { openUrl } from '~/utils/open-url'
 
 // Composables
@@ -53,6 +55,7 @@ const { projects } = useProjects()
 const {
   issues,
   filteredIssues,
+  sortedIssues,
   paginatedIssues,
   groupedIssues,
   selectedIssue,
@@ -67,6 +70,7 @@ const {
   // Actions
   fetchIssues,
   fetchPollData,
+  updateIssue,
   selectIssue,
   clearIssues,
   newlyAddedIds,
@@ -85,6 +89,8 @@ const { isLeftSidebarOpen, leftSidebarWidth, startResizeLeft } = useSidebarResiz
 
 type IssuesView = 'table' | 'list' | 'board' | 'stats'
 const activeIssuesView = useProjectStorage<IssuesView>('activeIssuesView', 'table')
+const hiddenBoardColumns = useProjectStorage<BoardColumnId[]>('hiddenBoardColumns', [])
+const activeBoardMoveId = ref<string | null>(null)
 const issuesViewMeta: Record<IssuesView, { label: string, description: string }> = {
   table: {
     label: 'Table',
@@ -96,7 +102,7 @@ const issuesViewMeta: Record<IssuesView, { label: string, description: string }>
   },
   board: {
     label: 'Board',
-    description: 'Plan work across lanes with the new sidebar-driven shell.',
+    description: 'Move issues across kanban lanes with persistent board controls.',
   },
   stats: {
     label: 'Stats',
@@ -542,6 +548,7 @@ const inProgressIssues = computed(() => {
 // Pinned issues
 const { pinnedIssueIds, pinnedSortMode, togglePin, reorderPinned, toggleSortMode: togglePinnedSort, getPinnedIssues } = usePinnedIssues()
 const pinnedIssuesList = computed(() => getPinnedIssues(issues.value))
+const boardColumns = computed(() => groupIssuesForBoard(sortedIssues.value))
 
 const handleRemoveLabelFilter = (label: string) => {
   toggleLabelFilter(label)
@@ -572,6 +579,66 @@ const handleKpiClick = (kpi: KpiFilter) => {
 
 const handleIssuesViewSelect = (view: IssuesView) => {
   activeIssuesView.value = view
+}
+
+const toggleBoardColumn = (columnId: BoardColumnId) => {
+  if (hiddenBoardColumns.value.includes(columnId)) {
+    hiddenBoardColumns.value = hiddenBoardColumns.value.filter(id => id !== columnId)
+    return
+  }
+
+  hiddenBoardColumns.value = [...hiddenBoardColumns.value, columnId]
+}
+
+const restoreBoardColumns = () => {
+  hiddenBoardColumns.value = []
+}
+
+const applyLocalIssueStatus = (issueId: string, status: IssueStatus) => {
+  const nextUpdatedAt = new Date().toISOString()
+
+  const issue = issues.value.find(entry => entry.id === issueId)
+  if (issue) {
+    issue.status = status
+    issue.updatedAt = nextUpdatedAt
+  }
+
+  if (selectedIssue.value?.id === issueId) {
+    selectedIssue.value.status = status
+    selectedIssue.value.updatedAt = nextUpdatedAt
+  }
+}
+
+const handleBoardMove = async (issueId: string, columnId: BoardColumnId) => {
+  const issue = issues.value.find(entry => entry.id === issueId)
+  if (!issue) return
+
+  const targetStatus = getBoardPrimaryStatus(columnId)
+  if (issue.status === targetStatus) return
+
+  const previousStatus = issue.status
+  const previousUpdatedAt = issue.updatedAt
+  const selectedPreviousStatus = selectedIssue.value?.id === issueId ? selectedIssue.value.status : null
+  const selectedPreviousUpdatedAt = selectedIssue.value?.id === issueId ? selectedIssue.value.updatedAt : null
+
+  activeBoardMoveId.value = issueId
+  applyLocalIssueStatus(issueId, targetStatus)
+
+  const updated = await updateIssue(issueId, { status: targetStatus })
+  if (!updated) {
+    issue.status = previousStatus
+    issue.updatedAt = previousUpdatedAt
+    if (selectedIssue.value?.id === issueId && selectedPreviousStatus && selectedPreviousUpdatedAt) {
+      selectedIssue.value.status = selectedPreviousStatus
+      selectedIssue.value.updatedAt = selectedPreviousUpdatedAt
+    }
+    notifyError(`Failed to move ${issueId}`, 'The issue status was restored to its previous lane.')
+    activeBoardMoveId.value = null
+    return
+  }
+
+  notifySuccess(`Moved ${issueId}`, `Status updated to ${targetStatus.replace('_', ' ')}.`)
+  activeBoardMoveId.value = null
 }
 
 const activeViewMeta = computed(() => issuesViewMeta[activeIssuesView.value])
@@ -723,7 +790,17 @@ watch(
             Loading stats...
           </div>
 
-          <IssuesBoardView v-else />
+          <IssuesBoardView
+            v-else
+            :columns="boardColumns"
+            :hidden-columns="hiddenBoardColumns"
+            :active-move-id="activeBoardMoveId"
+            :pinned-ids="pinnedIssueIds"
+            @select="handleSelectIssue"
+            @move="handleBoardMove"
+            @toggle-column="toggleBoardColumn"
+            @restore-columns="restoreBoardColumns"
+          />
 
           <div v-if="isLoading && activeIssuesView === 'table'" class="text-center text-muted-foreground py-4">
             Loading...

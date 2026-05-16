@@ -9,6 +9,10 @@ import {
   filterIssues,
   groupIssues,
   computeReadyIssues,
+  groupIssuesForBoard,
+  getBoardColumnForStatus,
+  getBoardPrimaryStatus,
+  BOARD_COLUMNS,
   statusOrder,
   priorityOrder,
   typeOrder,
@@ -261,6 +265,51 @@ describe('sortIssues', () => {
     const noLabel = makeIssue({ id: 'a', labels: [] })
     const result = sortIssues([noLabel, withLabel], 'labels', 'asc')
     expect(result[0]!.id).toBe('b')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// board helpers
+// ---------------------------------------------------------------------------
+describe('board helpers', () => {
+  it('documents the expected visible board columns and order', () => {
+    expect(BOARD_COLUMNS.map(column => column.id)).toEqual(['backlog', 'in_progress', 'blocked', 'done'])
+  })
+
+  it('maps special statuses into explicit board columns', () => {
+    expect(getBoardColumnForStatus('open')).toBe('backlog')
+    expect(getBoardColumnForStatus('deferred')).toBe('backlog')
+    expect(getBoardColumnForStatus('pinned')).toBe('backlog')
+    expect(getBoardColumnForStatus('hooked')).toBe('backlog')
+    expect(getBoardColumnForStatus('in_progress')).toBe('in_progress')
+    expect(getBoardColumnForStatus('blocked')).toBe('blocked')
+    expect(getBoardColumnForStatus('closed')).toBe('done')
+    expect(getBoardColumnForStatus('tombstone')).toBeNull()
+  })
+
+  it('provides a primary persisted status for each board lane', () => {
+    expect(getBoardPrimaryStatus('backlog')).toBe('open')
+    expect(getBoardPrimaryStatus('in_progress')).toBe('in_progress')
+    expect(getBoardPrimaryStatus('blocked')).toBe('blocked')
+    expect(getBoardPrimaryStatus('done')).toBe('closed')
+  })
+
+  it('groups issues into board columns and excludes tombstones', () => {
+    const columns = groupIssuesForBoard([
+      makeIssue({ id: 'hooked-1', status: 'hooked', priority: 'p3' }),
+      makeIssue({ id: 'open-1', status: 'open', priority: 'p2' }),
+      makeIssue({ id: 'deferred-1', status: 'deferred', priority: 'p4' }),
+      makeIssue({ id: 'progress-1', status: 'in_progress' }),
+      makeIssue({ id: 'blocked-1', status: 'blocked' }),
+      makeIssue({ id: 'closed-1', status: 'closed' }),
+      makeIssue({ id: 'deleted-1', status: 'tombstone' }),
+    ])
+
+    expect(columns[0]!.definition.id).toBe('backlog')
+    expect(columns[0]!.issues.map(issue => issue.id)).toEqual(['open-1', 'hooked-1', 'deferred-1'])
+    expect(columns[1]!.issues.map(issue => issue.id)).toEqual(['progress-1'])
+    expect(columns[2]!.issues.map(issue => issue.id)).toEqual(['blocked-1'])
+    expect(columns[3]!.issues.map(issue => issue.id)).toEqual(['closed-1'])
   })
 })
 

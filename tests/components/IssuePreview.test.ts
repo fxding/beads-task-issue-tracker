@@ -147,10 +147,11 @@ describe('IssuePreview', () => {
     })
 
     const editors = wrapper.findAll('[data-testid="inline-markdown-editor"]')
+    expect(editors).toHaveLength(2)
     expect(wrapper.text()).toContain('Description')
     expect(wrapper.text()).toContain('Acceptance Criteria')
-    expect((editors[0].element as HTMLTextAreaElement).value).toBe('Original description')
-    expect((editors[1].element as HTMLTextAreaElement).value).toBe('- original criteria')
+    expect((editors[0]!.element as HTMLTextAreaElement).value).toBe('Original description')
+    expect((editors[1]!.element as HTMLTextAreaElement).value).toBe('- original criteria')
     expect(wrapper.findAll('button').some(node => node.text().includes('Description'))).toBe(false)
     expect(wrapper.findAll('button').some(node => node.text().includes('Acceptance Criteria'))).toBe(false)
   })

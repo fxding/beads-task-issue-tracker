@@ -8,7 +8,6 @@ import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { Markdown } from '@tiptap/markdown'
-import type { Editor } from '@tiptap/core'
 import { common, createLowlight } from 'lowlight'
 import {
   Bold,
@@ -161,7 +160,15 @@ function setOrUnsetLink() {
   instance.chain().focus().extendMarkRange('link').setLink({ href: trimmed }).run()
 }
 
-function shouldShowBubbleMenu({ editor, from, to }: { editor: Editor; from: number; to: number }) {
+function shouldShowBubbleMenu({
+  editor,
+  from,
+  to,
+}: {
+  editor: { isEditable: boolean; isActive: (name: string) => boolean }
+  from: number
+  to: number
+}) {
   return props.showBubbleToolbar
     && editor.isEditable
     && from !== to

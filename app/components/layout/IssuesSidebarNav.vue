@@ -12,7 +12,7 @@ const emit = defineEmits<{
 const items: Array<{ id: IssuesView, label: string, description: string }> = [
   { id: 'table', label: 'Table', description: 'Current issue table and filters' },
   { id: 'list', label: 'List', description: 'Status-based browsing and pinned work' },
-  { id: 'board', label: 'Board', description: 'Planned board experience' },
+  { id: 'board', label: 'Board', description: 'Move issues across kanban lanes' },
   { id: 'stats', label: 'Stats', description: 'Project stats and charts' },
 ]
 </script>
@@ -35,12 +35,6 @@ const items: Array<{ id: IssuesView, label: string, description: string }> = [
       >
         <div class="flex items-center justify-between gap-3">
           <span class="text-sm font-medium">{{ item.label }}</span>
-          <span
-            v-if="item.id === 'board'"
-            class="rounded-full border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
-          >
-            Plan
-          </span>
         </div>
         <p class="mt-1 text-xs text-muted-foreground">
           {{ item.description }}
