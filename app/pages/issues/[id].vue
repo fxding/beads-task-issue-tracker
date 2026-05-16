@@ -352,7 +352,7 @@ onMounted(async () => {
         </div>
       </header>
 
-      <main class="mx-auto flex w-full max-w-6xl flex-1 min-h-0 flex-col overflow-hidden px-4 py-6">
+      <main class="mx-auto flex w-full flex-1 min-h-0 flex-col overflow-hidden px-4 py-6">
         <div v-if="showOnboarding" class="rounded-2xl border border-border bg-card p-8 text-sm text-muted-foreground">
           Choose a workspace from the sidebar to view issue details.
         </div>
@@ -362,9 +362,9 @@ onMounted(async () => {
         </div>
 
         <div v-else-if="currentIssue" class="flex-1 min-h-0 overflow-hidden">
-          <div class="mx-auto grid h-full min-h-0 w-full max-w-6xl gap-4 overflow-hidden pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div class="mx-auto grid h-full min-h-0 w-full gap-4 overflow-hidden pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
             <ScrollArea class="h-full min-h-0">
-              <div class="space-y-3 pr-1">
+              <div class="space-y-3 pr-1 max-w-4xl mx-auto">
                 <IssueDetailHeader
                   :selected-issue="currentIssue"
                   :readonly="currentIssue.status === 'closed'"
