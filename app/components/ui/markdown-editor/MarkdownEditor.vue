@@ -43,6 +43,8 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', payload: string): void
+  (e: 'blur'): void
+  (e: 'focus'): void
 }>()
 
 const lowlight = createLowlight(common)
@@ -80,6 +82,12 @@ const editor = useEditor({
   },
   onUpdate({ editor }) {
     emit('update:modelValue', editor.getMarkdown().trimEnd())
+  },
+  onBlur() {
+    emit('blur')
+  },
+  onFocus() {
+    emit('focus')
   },
 })
 

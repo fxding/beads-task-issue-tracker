@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { Plus, X } from 'lucide-vue-next'
+import { LoaderCircle, Plus, X } from 'lucide-vue-next'
 import type { Issue, UpdateIssuePayload } from '~/types/issue'
 import { Button } from '~/components/ui/button'
 import { LinkifiedText } from '~/components/ui/linkified-text'
@@ -52,11 +52,9 @@ const canInlineEdit = computed(() => !props.readonly)
 const hasDescriptionChanges = computed(() => inlineForm.description !== (props.issue.description || ''))
 const hasAcceptanceCriteriaChanges = computed(() => inlineForm.acceptanceCriteria !== (props.issue.acceptanceCriteria || ''))
 
-const resetInlineField = (field: Exclude<InlineField, null>) => {
-  inlineForm[field] = props.issue[field] || ''
-}
-
 const saveInlineField = (field: Exclude<InlineField, null>) => {
+  if (savingField.value === field) return
+
   const hasChanges = field === 'description'
     ? hasDescriptionChanges.value
     : hasAcceptanceCriteriaChanges.value
@@ -185,13 +183,9 @@ const formatEstimate = (minutes: number) => {
     <div>
       <div class="flex items-center justify-between gap-2">
         <h4 class="text-[10px] font-bold uppercase tracking-wide">Description</h4>
-        <div v-if="canInlineEdit && hasDescriptionChanges" class="flex items-center gap-2">
-          <Button type="button" size="sm" :disabled="savingField === 'description'" @click="saveInlineField('description')">
-            Save description
-          </Button>
-          <Button type="button" variant="ghost" size="sm" @click="resetInlineField('description')">
-            Reset
-          </Button>
+        <div v-if="savingField === 'description'" class="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <LoaderCircle class="size-3 animate-spin" />
+          <span>Saving…</span>
         </div>
       </div>
       <div>
@@ -202,6 +196,7 @@ const formatEstimate = (minutes: number) => {
           min-height-class="min-h-28"
           :show-static-toolbar="false"
           :show-bubble-toolbar="true"
+          @blur="saveInlineField('description')"
         />
         <div v-else class="text-xs"><LinkifiedText :text="issue.description" fallback="No description provided." /></div>
       </div>
@@ -211,13 +206,9 @@ const formatEstimate = (minutes: number) => {
     <div v-if="issue.acceptanceCriteria || canInlineEdit">
       <div class="flex items-center justify-between gap-2">
         <h4 class="text-[10px] font-bold uppercase tracking-wide">Acceptance Criteria</h4>
-        <div v-if="canInlineEdit && hasAcceptanceCriteriaChanges" class="flex items-center gap-2">
-          <Button type="button" size="sm" :disabled="savingField === 'acceptanceCriteria'" @click="saveInlineField('acceptanceCriteria')">
-            Save acceptance criteria
-          </Button>
-          <Button type="button" variant="ghost" size="sm" @click="resetInlineField('acceptanceCriteria')">
-            Reset
-          </Button>
+        <div v-if="savingField === 'acceptanceCriteria'" class="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <LoaderCircle class="size-3 animate-spin" />
+          <span>Saving…</span>
         </div>
       </div>
       <div >
@@ -229,6 +220,7 @@ const formatEstimate = (minutes: number) => {
           min-height-class="min-h-24"
           :show-static-toolbar="false"
           :show-bubble-toolbar="true"
+          @blur="saveInlineField('acceptanceCriteria')"
         />
         <div v-else class="text-xs"><LinkifiedText :text="issue.acceptanceCriteria" fallback="No acceptance criteria yet." /></div>
       </div>

@@ -35,13 +35,14 @@ vi.mock('~/components/ui/markdown-editor', () => ({
     name: 'MarkdownEditorStub',
     inheritAttrs: false,
     props: ['modelValue'],
-    emits: ['update:modelValue'],
+    emits: ['update:modelValue', 'blur'],
     setup(props, { emit, attrs }) {
       return () => h('textarea', {
         ...attrs,
         'data-testid': 'inline-markdown-editor',
         value: props.modelValue,
         onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLTextAreaElement).value),
+        onBlur: () => emit('blur'),
       })
     },
   }),
@@ -98,7 +99,7 @@ describe('IssuePreview', () => {
     expect(wrapper.findAll('button').some(node => node.text().includes('Acceptance Criteria'))).toBe(false)
   })
 
-  it('emits inline description updates', async () => {
+  it('auto-saves description on blur', async () => {
     const wrapper = mount(IssuePreview, {
       props: {
         issue,
@@ -109,14 +110,14 @@ describe('IssuePreview', () => {
 
     const editor = wrapper.get('[data-testid="inline-markdown-editor"]')
     await editor.setValue('Updated **markdown** description')
-    await wrapper.get('button').trigger('click')
+    await editor.trigger('blur')
     await nextTick()
 
     const payload = wrapper.emitted('save-inline')?.[0]?.[0] as UpdateIssuePayload | undefined
     expect(payload).toEqual({ description: 'Updated **markdown** description' })
   })
 
-  it('emits inline acceptance criteria updates', async () => {
+  it('auto-saves acceptance criteria on blur', async () => {
     const wrapper = mount(IssuePreview, {
       props: {
         issue,
@@ -125,9 +126,9 @@ describe('IssuePreview', () => {
       },
     })
 
-    const editor = wrapper.findAll('[data-testid="inline-markdown-editor"]')[1]
+    const editor = wrapper.findAll('[data-testid="inline-markdown-editor"]')[1]!
     await editor.setValue('- updated\n- criteria')
-    await wrapper.findAll('button').find(node => node.text() === 'Save acceptance criteria')?.trigger('click')
+    await editor.trigger('blur')
     await nextTick()
 
     const payload = wrapper.emitted('save-inline')?.[0]?.[0] as UpdateIssuePayload | undefined

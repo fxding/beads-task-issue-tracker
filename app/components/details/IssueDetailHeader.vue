@@ -56,6 +56,7 @@ const handleTitleKeydown = (event: KeyboardEvent) => {
         class="border-0 bg-transparent px-0 font-semibold shadow-none focus-visible:ring-0"
         aria-label="Issue title"
         @keydown="handleTitleKeydown"
+        @blur="saveTitle"
       />
     </div>
   </div>
