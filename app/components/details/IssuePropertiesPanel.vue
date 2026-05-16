@@ -62,9 +62,10 @@ const savingProperty = ref<EditablePropertyKey | null>(null)
 const labelsMenuOpen = ref(false)
 const labelsDraft = ref<string[]>([])
 const newLabelInput = ref('')
+const statusReadonly = computed(() => props.readonly && props.issue.status !== 'closed')
 
 const emitSave = (key: EditablePropertyKey, payload: UpdateIssuePayload) => {
-  if (props.readonly || savingProperty.value === key) return
+  if ((props.readonly && key !== 'status') || savingProperty.value === key) return
   savingProperty.value = key
   emit('save-inline', payload)
 }
@@ -303,11 +304,11 @@ const updateParent = (parent: string) => {
             <p class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{{ item.label }}</p>
             <div class="mt-1 min-h-5">
               <DropdownMenu v-if="item.key === 'status'">
-                <DropdownMenuTrigger as-child :disabled="readonly">
+                <DropdownMenuTrigger as-child :disabled="statusReadonly">
                   <Button variant="ghost" size="sm" class="h-auto min-h-6 justify-start !px-0 text-left hover:bg-transparent disabled:opacity-100">
                     <StatusBadge :status="issue.status" size="sm" />
                     <LoaderCircle v-if="savingProperty === 'status'" class="ml-2 size-3 animate-spin text-muted-foreground" />
-                    <ChevronDown v-else-if="!readonly" class="ml-2 size-3 text-muted-foreground" />
+                    <ChevronDown v-else-if="!statusReadonly" class="ml-2 size-3 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" class="w-44">
