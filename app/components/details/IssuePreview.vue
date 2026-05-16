@@ -191,8 +191,8 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
     <!-- Description Section -->
     <div>
       <div class="flex items-center justify-between gap-2">
-        <h4 class="text-[10px] font-bold uppercase tracking-wide">Description</h4>
-        <div v-if="savingField === 'description'" class="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <h4 class="text-sm font-bold uppercase tracking-wide">Description</h4>
+        <div v-if="savingField === 'description'" class="flex items-center gap-1 text-sm text-muted-foreground">
           <LoaderCircle class="size-3 animate-spin" />
           <span>Saving…</span>
         </div>
@@ -214,8 +214,8 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
     <!-- Acceptance Criteria Section -->
     <div v-if="issue.acceptanceCriteria || canInlineEdit">
       <div class="flex items-center justify-between gap-2">
-        <h4 class="text-[10px] font-bold uppercase tracking-wide">Acceptance Criteria</h4>
-        <div v-if="savingField === 'acceptanceCriteria'" class="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <h4 class="text-sm font-bold uppercase tracking-wide">Acceptance Criteria</h4>
+        <div v-if="savingField === 'acceptanceCriteria'" class="flex items-center gap-1 text-sm text-muted-foreground">
           <LoaderCircle class="size-3 animate-spin" />
           <span>Saving…</span>
         </div>
@@ -237,7 +237,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
 
     <!-- Parent Section (only if exists) -->
     <div v-if="issue.parent">
-      <h4 class="text-[10px] font-bold uppercase tracking-wide">Parent</h4>
+      <h4 class="text-sm font-bold uppercase tracking-wide">Parent</h4>
       <div >
         <div
           class="flex items-center justify-between gap-2 py-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1"
@@ -257,7 +257,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
 
     <!-- External Reference Section (only if exists) -->
     <div v-if="nonImageRefs.length > 0">
-      <h4 class="text-[10px] font-bold uppercase tracking-wide">
+      <h4 class="text-sm font-bold uppercase tracking-wide">
           External Reference
           <span class="text-muted-foreground">({{ nonImageRefs.length }})</span>
       </h4>
@@ -270,7 +270,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
 
     <!-- Estimate Section (only if exists) -->
     <div v-if="issue.estimateMinutes">
-      <h4 class="text-[10px] font-bold uppercase tracking-wide">Estimate</h4>
+      <h4 class="text-sm font-bold uppercase tracking-wide">Estimate</h4>
       <div >
         <p class="text-sm">{{ formatEstimate(issue.estimateMinutes) }}</p>
       </div>
@@ -278,7 +278,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
 
     <!-- Design Notes Section (only if exists) -->
     <div v-if="issue.designNotes">
-      <h4 class="text-[10px] font-bold uppercase tracking-wide">Design Notes</h4>
+      <h4 class="text-sm font-bold uppercase tracking-wide">Design Notes</h4>
       <div >
         <div class="text-sm"><LinkifiedText :text="issue.designNotes" /></div>
       </div>
@@ -287,7 +287,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
 
     <!-- Working Notes Section (only if exists) -->
     <div v-if="issue.workingNotes">
-      <h4 class="text-[10px] font-bold uppercase tracking-wide">Working Notes</h4>
+      <h4 class="text-sm font-bold uppercase tracking-wide">Working Notes</h4>
       <div >
         <div class="text-sm"><LinkifiedText :text="issue.workingNotes" /></div>
       </div>
@@ -295,7 +295,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
 
     <!-- Metadata Section (only if exists, read-only JSON) -->
     <div v-if="issue.metadata">
-      <h4 class="text-[10px] font-bold uppercase tracking-wide">Metadata</h4>
+      <h4 class="text-sm font-bold uppercase tracking-wide">Metadata</h4>
       <div >
         <pre class="overflow-x-auto whitespace-pre-wrap break-words rounded bg-muted/50 p-2 text-sm">{{ formatMetadata(issue.metadata) }}</pre>
       </div>
@@ -303,7 +303,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
 
     <!-- Spec ID Section (only if exists) -->
     <div v-if="issue.specId">
-      <h4 class="text-[10px] font-bold uppercase tracking-wide">Spec ID</h4>
+      <h4 class="text-sm font-bold uppercase tracking-wide">Spec ID</h4>
       <div >
         <p class="font-mono text-sm">{{ issue.specId }}</p>
       </div>
@@ -336,8 +336,8 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
       <TabsContent value="children" class="mt-3 space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
-            <h4 class="text-[10px] font-bold uppercase tracking-wide">Children</h4>
-            <span class="text-[10px] text-muted-foreground">({{ sortedChildren.length }})</span>
+            <h4 class="text-sm font-bold uppercase tracking-wide">Children</h4>
+            <span class="text-sm text-muted-foreground">({{ sortedChildren.length }})</span>
           </div>
           <Button
             v-if="issue.type === 'epic' && !readonly"
@@ -374,7 +374,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
       <TabsContent value="dependencies" class="mt-3">
         <div v-if="hasDependencies" class="space-y-3">
           <div v-if="issue.blockedBy?.length">
-            <h5 class="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocked By</h5>
+            <h5 class="mb-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">Blocked By</h5>
             <div class="space-y-0.5">
               <div
                 v-for="id in sortedBlockedBy"
@@ -396,7 +396,7 @@ const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.
           </div>
 
           <div v-if="issue.blocks?.length">
-            <h5 class="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocks</h5>
+            <h5 class="mb-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">Blocks</h5>
             <div class="space-y-0.5">
               <div
                 v-for="id in sortedBlocks"
