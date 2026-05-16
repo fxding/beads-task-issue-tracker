@@ -212,10 +212,10 @@ export async function bdUpdate(
 ) {
   const args: string[] = [id]
 
-  if (updates.title) {
+  if (updates.title !== undefined) {
     args.push(`--title="${escapeQuotes(updates.title)}"`)
   }
-  if (updates.description) {
+  if (updates.description !== undefined) {
     args.push(`--description="${escapeQuotes(updates.description)}"`)
   }
   if (updates.type) {
@@ -236,16 +236,16 @@ export async function bdUpdate(
   if (updates.externalRef) {
     args.push(`--external-ref="${escapeQuotes(updates.externalRef)}"`)
   }
-  if (updates.estimate) {
+  if (updates.estimate !== undefined) {
     args.push(`--estimate=${updates.estimate}`)
   }
-  if (updates.design) {
+  if (updates.design !== undefined) {
     args.push(`--design="${escapeQuotes(updates.design)}"`)
   }
-  if (updates.acceptance) {
+  if (updates.acceptance !== undefined) {
     args.push(`--acceptance="${escapeQuotes(updates.acceptance)}"`)
   }
-  if (updates.notes) {
+  if (updates.notes !== undefined) {
     args.push(`--notes="${escapeQuotes(updates.notes)}"`)
   }
 

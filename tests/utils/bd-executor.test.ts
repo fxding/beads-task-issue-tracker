@@ -1,5 +1,20 @@
-import { describe, it, expect } from 'vitest'
-import { unwrapBrEnvelope } from '../../server/utils/bd-executor'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const execMock = vi.fn()
+
+vi.mock('node:child_process', async () => {
+  const actual = await vi.importActual<typeof import('node:child_process')>('node:child_process')
+  return {
+    ...actual,
+    default: {
+      ...actual,
+      exec: execMock,
+    },
+    exec: execMock,
+  }
+})
+
+const { bdUpdate, unwrapBrEnvelope } = await import('../../server/utils/bd-executor')
 
 describe('unwrapBrEnvelope', () => {
   const sampleIssues = [
@@ -94,5 +109,28 @@ describe('unwrapBrEnvelope', () => {
     const result = unwrapBrEnvelope(envelope)
     expect(result).toHaveLength(1)
     expect(result[0]).toHaveProperty('id', 'proj-abc')
+  })
+})
+
+describe('bdUpdate', () => {
+  beforeEach(() => {
+    execMock.mockReset()
+    execMock.mockImplementation((command, options, callback) => {
+      callback(null, { stdout: '{}', stderr: '' })
+    })
+  })
+
+  it('forwards empty acceptance criteria so bd can clear the field', async () => {
+    await bdUpdate('beads-task-issue-tracker-kya', { acceptance: '' }, '/tmp/project')
+
+    expect(execMock).toHaveBeenCalledTimes(1)
+    expect(execMock.mock.calls[0]?.[0]).toContain('--acceptance=""')
+  })
+
+  it('still omits acceptance criteria when the field is not present', async () => {
+    await bdUpdate('beads-task-issue-tracker-kya', { title: 'Keep title only' }, '/tmp/project')
+
+    expect(execMock).toHaveBeenCalledTimes(1)
+    expect(execMock.mock.calls[0]?.[0]).not.toContain('--acceptance=')
   })
 })
