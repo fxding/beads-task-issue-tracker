@@ -184,7 +184,7 @@ const formatEstimate = (minutes: number) => {
     <!-- Description Section -->
     <div>
       <div class="flex items-center justify-between gap-2">
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Description</h4>
+        <h4 class="text-[10px] font-bold uppercase tracking-wide">Description</h4>
         <div v-if="canInlineEdit && hasDescriptionChanges" class="flex items-center gap-2">
           <Button type="button" size="sm" :disabled="savingField === 'description'" @click="saveInlineField('description')">
             Save description
@@ -194,12 +194,11 @@ const formatEstimate = (minutes: number) => {
           </Button>
         </div>
       </div>
-      <div class="mt-1 pl-4.5">
+      <div>
         <MarkdownEditor
           v-if="canInlineEdit"
           v-model="inlineForm.description"
           placeholder="Describe the issue..."
-          class="text-xs"
           min-height-class="min-h-28"
           :show-static-toolbar="false"
           :show-bubble-toolbar="true"
@@ -211,7 +210,7 @@ const formatEstimate = (minutes: number) => {
     <!-- Acceptance Criteria Section -->
     <div v-if="issue.acceptanceCriteria || canInlineEdit">
       <div class="flex items-center justify-between gap-2">
-        <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Acceptance Criteria</h4>
+        <h4 class="text-[10px] font-bold uppercase tracking-wide">Acceptance Criteria</h4>
         <div v-if="canInlineEdit && hasAcceptanceCriteriaChanges" class="flex items-center gap-2">
           <Button type="button" size="sm" :disabled="savingField === 'acceptanceCriteria'" @click="saveInlineField('acceptanceCriteria')">
             Save acceptance criteria
@@ -221,7 +220,7 @@ const formatEstimate = (minutes: number) => {
           </Button>
         </div>
       </div>
-      <div class="mt-1 pl-4.5">
+      <div >
         <MarkdownEditor
           v-if="canInlineEdit"
           v-model="inlineForm.acceptanceCriteria"
@@ -237,8 +236,8 @@ const formatEstimate = (minutes: number) => {
 
     <!-- Parent Section (only if exists) -->
     <div v-if="issue.parent">
-      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Parent</h4>
-      <div class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-bold uppercase tracking-wide">Parent</h4>
+      <div >
         <div
           class="flex items-center justify-between gap-2 py-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1"
           @click="emit('navigate-to-issue', issue.parent.id)"
@@ -259,21 +258,20 @@ const formatEstimate = (minutes: number) => {
     <div v-if="issue.type === 'epic' || issue.children?.length">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-1.5">
-          <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Children</h4>
+          <h4 class="text-[10px] font-bold uppercase tracking-wide">Children</h4>
           <span v-if="issue.children?.length" class="text-[10px] text-muted-foreground">({{ issue.children.length }})</span>
         </div>
         <Button
           v-if="issue.type === 'epic' && !readonly"
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           @click="emit('create-child', issue.id)"
         >
-          <Plus class="w-3 h-3 mr-1" />
-          Create child
+          <Plus class="" />
         </Button>
       </div>
-      <div class="mt-1 pl-4.5 space-y-0.5">
+      <div class="space-y-0.5">
         <template v-if="sortedChildren.length">
           <div
             v-for="child in sortedChildren"
@@ -297,11 +295,11 @@ const formatEstimate = (minutes: number) => {
 
     <!-- External Reference Section (only if exists) -->
     <div v-if="nonImageRefs.length > 0">
-      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+      <h4 class="text-[10px] font-bold uppercase tracking-wide">
           External Reference
           <span class="text-muted-foreground">({{ nonImageRefs.length }})</span>
       </h4>
-      <div class="mt-1 pl-4.5 space-y-1">
+      <div class="space-y-1">
         <p v-for="(ref, index) in nonImageRefs" :key="index" class="text-xs break-all">
           <LinkifiedText :text="ref" />
         </p>
@@ -310,8 +308,8 @@ const formatEstimate = (minutes: number) => {
 
     <!-- Dependencies Section -->
     <div v-if="hasDependencies">
-      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Dependencies</h4>
-      <div class="mt-1 pl-4.5 space-y-2">
+      <h4 class="text-[10px] font-bold uppercase tracking-wide">Dependencies</h4>
+      <div class="space-y-2">
         <!-- Blocked By -->
         <div v-if="issue.blockedBy?.length">
           <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocked By</h5>
@@ -362,16 +360,16 @@ const formatEstimate = (minutes: number) => {
 
     <!-- Estimate Section (only if exists) -->
     <div v-if="issue.estimateMinutes">
-      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Estimate</h4>
-      <div class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-bold uppercase tracking-wide">Estimate</h4>
+      <div >
         <p class="text-xs">{{ formatEstimate(issue.estimateMinutes) }}</p>
       </div>
     </div>
 
     <!-- Design Notes Section (only if exists) -->
     <div v-if="issue.designNotes">
-      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Design Notes</h4>
-      <div class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-bold uppercase tracking-wide">Design Notes</h4>
+      <div >
         <div class="text-xs"><LinkifiedText :text="issue.designNotes" /></div>
       </div>
     </div>
@@ -379,24 +377,24 @@ const formatEstimate = (minutes: number) => {
 
     <!-- Working Notes Section (only if exists) -->
     <div v-if="issue.workingNotes">
-      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Working Notes</h4>
-      <div class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-bold uppercase tracking-wide">Working Notes</h4>
+      <div >
         <div class="text-xs"><LinkifiedText :text="issue.workingNotes" /></div>
       </div>
     </div>
 
     <!-- Metadata Section (only if exists, read-only JSON) -->
     <div v-if="issue.metadata">
-      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Metadata</h4>
-      <div class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-bold uppercase tracking-wide">Metadata</h4>
+      <div >
         <pre class="text-xs bg-muted/50 rounded p-2 overflow-x-auto whitespace-pre-wrap break-words">{{ formatMetadata(issue.metadata) }}</pre>
       </div>
     </div>
 
     <!-- Spec ID Section (only if exists) -->
     <div v-if="issue.specId">
-      <h4 class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Spec ID</h4>
-      <div class="mt-1 pl-4.5">
+      <h4 class="text-[10px] font-bold uppercase tracking-wide">Spec ID</h4>
+      <div >
         <p class="text-xs font-mono">{{ issue.specId }}</p>
       </div>
     </div>

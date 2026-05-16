@@ -2,18 +2,15 @@
 import { computed } from 'vue'
 import { CircleDot, FolderKanban, Link2, Tag, UserRound } from 'lucide-vue-next'
 import type { Issue } from '~/types/issue'
-import { Button } from '~/components/ui/button'
 import LabelBadge from '~/components/issues/LabelBadge.vue'
 import StatusBadge from '~/components/issues/StatusBadge.vue'
 import PriorityBadge from '~/components/issues/PriorityBadge.vue'
 
 const props = defineProps<{
   issue: Issue
-  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
-  edit: []
   'navigate-to-issue': [id: string]
 }>()
 
@@ -141,26 +138,13 @@ const propertySections = computed(() => {
     >
       <div class="mb-3 flex items-center justify-between gap-2">
         <h4 class="text-sm font-medium text-foreground">{{ section.title }}</h4>
-        <Button
-          v-if="!readonly"
-          type="button"
-          variant="ghost"
-          size="sm"
-          class="h-7 px-2 text-[11px] text-muted-foreground"
-          @click="emit('edit')"
-        >
-          Edit
-        </Button>
       </div>
 
       <div class="space-y-2">
-        <button
+        <div
           v-for="item in section.items"
           :key="item.key"
-          type="button"
-          class="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-muted/60"
-          :class="readonly ? 'cursor-default hover:bg-transparent' : ''"
-          @click="!readonly && emit('edit')"
+          class="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left"
         >
           <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-muted-foreground">
             <CircleDot v-if="item.key === 'status'" class="size-3.5" />
@@ -182,7 +166,7 @@ const propertySections = computed(() => {
               <p v-else class="truncate text-xs" :class="item.empty ? 'text-muted-foreground' : 'text-foreground'">{{ item.value }}</p>
             </div>
           </div>
-        </button>
+        </div>
       </div>
     </div>
 

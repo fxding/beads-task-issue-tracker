@@ -7,7 +7,6 @@ import IssueDetailHeader from '~/components/details/IssueDetailHeader.vue'
 import IssuePropertiesPanel from '~/components/details/IssuePropertiesPanel.vue'
 import IssuePreview from '~/components/details/IssuePreview.vue'
 import IssueAttachmentsSection from '~/components/details/IssueAttachmentsSection.vue'
-import IssueForm from '~/components/details/IssueForm.vue'
 import CommentSection from '~/components/details/CommentSection.vue'
 import DebugPanel from '~/components/layout/DebugPanel.vue'
 import DialogsLayer from '~/components/layout/DialogsLayer.vue'
@@ -42,7 +41,6 @@ const {
   issues,
   selectedIssue,
   isLoading,
-  isUpdating,
   fetchIssues,
   fetchIssue,
   updateIssue,
@@ -58,16 +56,12 @@ const { showDebugPanel, showSettingsDialog } = useAppMenu()
 const {
   handleDeleteIssue,
   handleCloseIssue,
-  handleReopenIssue,
-  handleAttachImage,
   openAttachmentDialog,
   confirmDetachImage,
   confirmRemoveDependency,
   openAddBlockerDialog,
   openAddRelationDialog,
-  confirmRemoveRelation,
   availableIssuesForDeps,
-  bdDotNotationParent,
   initRelationTypes,
 } = useIssueDialogs()
 const { projects } = useProjects()
@@ -75,7 +69,6 @@ const { beadsPath, hasStoredPath, setPath } = useBeadsPath()
 const { isLeftSidebarOpen, leftSidebarWidth, startResizeLeft } = useSidebarResize()
 const isDev = import.meta.dev
 
-const isEditMode = ref(false)
 const isPageLoading = ref(true)
 const isOnboardingPickerOpen = ref(false)
 const appSidebarRef = ref<InstanceType<typeof AppSidebar> | null>(null)
@@ -105,24 +98,6 @@ const sidebarProviderStyle = computed<Record<string, string>>(() => ({
   '--sidebar-width-icon': '3.5rem',
 }))
 
-const availableLabels = computed(() => {
-  const labelSet = new Set<string>()
-  issues.value.forEach((issue) => {
-    issue.labels?.forEach(label => labelSet.add(label))
-  })
-  return Array.from(labelSet).sort()
-})
-
-const availableEpics = computed(() => {
-  return issues.value
-    .filter(issue => issue.type === 'epic' && issue.status !== 'closed')
-    .map(issue => ({ id: issue.id, title: issue.title }))
-})
-
-const syncEditModeFromRoute = () => {
-  isEditMode.value = route.query.edit === '1'
-}
-
 const goBackToList = async () => {
   selectIssue(null)
   await router.push('/')
@@ -141,7 +116,6 @@ const loadIssue = async () => {
     }
 
     const issue = await fetchIssue(issueId.value)
-    syncEditModeFromRoute()
 
     if (!issue) {
       await goBackToList()
@@ -151,27 +125,6 @@ const loadIssue = async () => {
   }
 }
 
-const clearEditQuery = async () => {
-  const nextQuery = { ...route.query }
-  delete nextQuery.edit
-  await router.replace({ query: nextQuery })
-}
-
-const handleEditIssue = async () => {
-  isEditMode.value = true
-  await router.replace({
-    query: {
-      ...route.query,
-      edit: '1',
-    },
-  })
-}
-
-const handleCancelEdit = async () => {
-  isEditMode.value = false
-  await clearEditQuery()
-}
-
 const handleSaveIssue = async (payload: UpdateIssuePayload) => {
   if (!currentIssue.value) return
 
@@ -179,8 +132,6 @@ const handleSaveIssue = async (payload: UpdateIssuePayload) => {
     await updateIssue(currentIssue.value.id, payload)
     await fetchIssue(currentIssue.value.id)
     await fetchStats(issues.value)
-    await clearEditQuery()
-    isEditMode.value = false
     notifySuccess('Issue saved')
   } catch {
     notifyError('Failed to save issue')
@@ -269,10 +220,6 @@ watch(issueId, async () => {
   await loadIssue()
 })
 
-watch(() => route.query.edit, () => {
-  syncEditModeFromRoute()
-})
-
 watch(currentIssue, async (issue) => {
   if (!issue && !isPageLoading.value && !showOnboarding.value) {
     await goBackToList()
@@ -352,7 +299,7 @@ onMounted(async () => {
           </Button>
         </div>
 
-        <div v-if="currentIssue && !isEditMode" class="flex items-center gap-1.5">
+        <div v-if="currentIssue" class="flex items-center gap-1.5">
           <Button
             :variant="isPinned(currentIssue.id) ? 'secondary' : 'ghost'"
             size="icon-sm"
@@ -415,27 +362,13 @@ onMounted(async () => {
         </div>
 
         <div v-else-if="currentIssue" class="flex-1 min-h-0 overflow-hidden">
-          <div v-if="isEditMode" class="h-full min-h-[70vh] overflow-hidden p-4">
-            <IssueForm
-              :issue="currentIssue"
-              :is-new="false"
-              :is-saving="isUpdating"
-              :available-epics="availableEpics"
-              :available-labels="availableLabels"
-              :dot-notation-parent="bdDotNotationParent"
-              @save="handleSaveIssue"
-              @cancel="handleCancelEdit"
-            />
-          </div>
-
-          <div v-else class="mx-auto grid h-full min-h-0 w-full max-w-6xl gap-4 overflow-hidden pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div class="mx-auto grid h-full min-h-0 w-full max-w-6xl gap-4 overflow-hidden pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
             <ScrollArea class="h-full min-h-0">
               <div class="space-y-3 pr-1">
                 <IssueDetailHeader
                   :selected-issue="currentIssue"
                   :readonly="currentIssue.status === 'closed'"
                   @save-inline="handleSaveIssue"
-                  @reopen="handleReopenIssue"
                 />
                 <IssuePreview
                   :issue="currentIssue"
@@ -463,8 +396,6 @@ onMounted(async () => {
             <div class="lg:sticky lg:top-4 lg:justify-self-end lg:w-[320px]">
               <IssuePropertiesPanel
                 :issue="currentIssue"
-                :readonly="currentIssue.status === 'closed'"
-                @edit="handleEditIssue"
                 @navigate-to-issue="handleNavigateToIssue"
               />
             </div>

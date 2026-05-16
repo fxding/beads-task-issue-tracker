@@ -162,7 +162,7 @@ function shouldShowBubbleMenu({ editor, from, to }: { editor: Editor; from: numb
 </script>
 
 <template>
-  <div :class="cn('rounded-md border border-input bg-transparent shadow-xs', props.class)">
+  <div :class="cn('border-input', props.class)">
     <BubbleMenu
       v-if="editor && props.showBubbleToolbar"
       :editor="editor"
@@ -343,7 +343,7 @@ function shouldShowBubbleMenu({ editor, from, to }: { editor: Editor; from: numb
     </div>
 
     <div
-      :class="cn('cursor-text px-3 py-2', props.minHeightClass)"
+      :class="cn('cursor-text px-0 py-2', props.minHeightClass)"
       @mousedown="handleContainerMouseDown"
     >
       <EditorContent :editor="editor" />
