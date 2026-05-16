@@ -48,6 +48,62 @@ vi.mock('~/components/ui/markdown-editor', () => ({
   }),
 }))
 
+vi.mock('~/components/details/IssueAttachmentsSection.vue', () => ({
+  default: defineComponent({
+    name: 'IssueAttachmentsSectionStub',
+    props: ['issueId', 'readonly'],
+    emits: ['detach-image'],
+    setup(props) {
+      return () => h('div', { 'data-testid': 'attachments-section' }, `attachments:${props.issueId}`)
+    },
+  }),
+}))
+
+vi.mock('~/components/details/CommentSection.vue', () => ({
+  default: defineComponent({
+    name: 'CommentSectionStub',
+    props: ['comments', 'readonly', 'embedded'],
+    emits: ['add-comment'],
+    setup(props, { emit }) {
+      return () => h('div', { 'data-testid': 'comment-section' }, [
+        h('span', `comments:${props.comments?.length ?? 0}`),
+        h('span', ` embedded:${String(props.embedded)}`),
+        h('button', { onClick: () => emit('add-comment', 'Test comment') }, 'add-comment'),
+      ])
+    },
+  }),
+}))
+
+vi.mock('~/components/ui/tabs', () => ({
+  Tabs: defineComponent({
+    name: 'TabsStub',
+    props: ['defaultValue'],
+    setup(_, { slots }) {
+      return () => h('div', { 'data-testid': 'tabs-root' }, slots.default?.())
+    },
+  }),
+  TabsList: defineComponent({
+    name: 'TabsListStub',
+    setup(_, { slots }) {
+      return () => h('div', { 'data-testid': 'tabs-list' }, slots.default?.())
+    },
+  }),
+  TabsTrigger: defineComponent({
+    name: 'TabsTriggerStub',
+    props: ['value'],
+    setup(props, { slots }) {
+      return () => h('button', { 'data-testid': `tab-trigger-${props.value}` }, slots.default?.())
+    },
+  }),
+  TabsContent: defineComponent({
+    name: 'TabsContentStub',
+    props: ['value'],
+    setup(props, { slots }) {
+      return () => h('div', { 'data-testid': `tab-content-${props.value}` }, slots.default?.())
+    },
+  }),
+}))
+
 vi.mock('~/components/issues/StatusBadge.vue', () => ({
   default: defineComponent({
     name: 'StatusBadgeStub',
@@ -147,5 +203,36 @@ describe('IssuePreview', () => {
     expect(wrapper.findAll('[data-testid="inline-markdown-editor"]')).toHaveLength(2)
     expect(wrapper.text()).not.toContain('Edit description')
     expect(wrapper.text()).not.toContain('Edit acceptance criteria')
+  })
+
+  it('renders attachments and comments inside preview with comments tab shown by default', () => {
+    const wrapper = mount(IssuePreview, {
+      props: {
+        issue,
+        readonly: false,
+        availableIssues: [],
+      },
+    })
+
+    expect(wrapper.get('[data-testid="attachments-section"]').text()).toContain(`attachments:${issue.id}`)
+    expect(wrapper.get('[data-testid="comment-section"]').text()).toContain('comments:0')
+    expect(wrapper.get('[data-testid="comment-section"]').text()).toContain('embedded:')
+    expect(wrapper.get('[data-testid="tab-trigger-comments"]').text()).toContain('Comments (0)')
+    expect(wrapper.get('[data-testid="tab-trigger-children"]').text()).toContain('Children (0)')
+    expect(wrapper.get('[data-testid="tab-trigger-dependencies"]').text()).toContain('Dependencies (0)')
+  })
+
+  it('re-emits add comment from the embedded comment section', async () => {
+    const wrapper = mount(IssuePreview, {
+      props: {
+        issue,
+        readonly: false,
+        availableIssues: [],
+      },
+    })
+
+    await wrapper.get('[data-testid="comment-section"] button').trigger('click')
+
+    expect(wrapper.emitted('add-comment')?.[0]?.[0]).toBe('Test comment')
   })
 })

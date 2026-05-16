@@ -5,8 +5,11 @@ import type { Issue, UpdateIssuePayload } from '~/types/issue'
 import { Button } from '~/components/ui/button'
 import { LinkifiedText } from '~/components/ui/linkified-text'
 import { MarkdownEditor } from '~/components/ui/markdown-editor'
+import IssueAttachmentsSection from '~/components/details/IssueAttachmentsSection.vue'
+import CommentSection from '~/components/details/CommentSection.vue'
 import StatusBadge from '~/components/issues/StatusBadge.vue'
 import PriorityBadge from '~/components/issues/PriorityBadge.vue'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { extractNonImageRefs } from '~/utils/markdown'
 
 const props = defineProps<{
@@ -27,6 +30,7 @@ const emit = defineEmits<{
   'create-child': [parentId: string]
   'open-add-blocker': [issueId: string]
   'remove-dependency': [issueId: string, blockerId: string]
+  'add-comment': [content: string]
   'save-inline': [payload: UpdateIssuePayload]
 }>()
 
@@ -175,10 +179,15 @@ const formatEstimate = (minutes: number) => {
   const mins = minutes % 60
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
 }
+
+const commentsTabLabel = computed(() => `Comments (${props.issue.comments?.length || 0})`)
+const childrenTabLabel = computed(() => `Children (${sortedChildren.value.length})`)
+const dependencyTabCount = computed(() => (props.issue.blockedBy?.length || 0) + (props.issue.blocks?.length || 0))
+const dependenciesTabLabel = computed(() => `Dependencies (${dependencyTabCount.value})`)
 </script>
 
 <template>
-  <div class="space-y-3">
+  <div class="space-y-4">
     <!-- Description Section -->
     <div>
       <div class="flex items-center justify-between gap-2">
@@ -246,45 +255,6 @@ const formatEstimate = (minutes: number) => {
       </div>
     </div>
 
-    <!-- Children Section (for epics, always show; for others, only if has children) -->
-    <div v-if="issue.type === 'epic' || issue.children?.length">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1.5">
-          <h4 class="text-[10px] font-bold uppercase tracking-wide">Children</h4>
-          <span v-if="issue.children?.length" class="text-[10px] text-muted-foreground">({{ issue.children.length }})</span>
-        </div>
-        <Button
-          v-if="issue.type === 'epic' && !readonly"
-          type="button"
-          variant="ghost"
-          size="sm"
-          @click="emit('create-child', issue.id)"
-        >
-          <Plus class="" />
-        </Button>
-      </div>
-      <div class="space-y-0.5">
-        <template v-if="sortedChildren.length">
-          <div
-            v-for="child in sortedChildren"
-            :key="child.id"
-            class="flex items-center justify-between gap-2 py-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1"
-            @click="emit('navigate-to-issue', child.id)"
-          >
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="shrink-0 font-mono text-xs text-foreground hover:underline">{{ getShortId(child.id) }}</span>
-              <span class="text-xs truncate">{{ child.title }}</span>
-            </div>
-            <div class="flex items-center gap-1 shrink-0">
-              <StatusBadge :status="child.status" size="sm" />
-              <PriorityBadge :priority="child.priority" size="sm" />
-            </div>
-          </div>
-        </template>
-        <p v-else class="text-xs text-muted-foreground">No children yet</p>
-      </div>
-    </div>
-
     <!-- External Reference Section (only if exists) -->
     <div v-if="nonImageRefs.length > 0">
       <h4 class="text-[10px] font-bold uppercase tracking-wide">
@@ -295,58 +265,6 @@ const formatEstimate = (minutes: number) => {
         <p v-for="(ref, index) in nonImageRefs" :key="index" class="text-xs break-all">
           <LinkifiedText :text="ref" />
         </p>
-      </div>
-    </div>
-
-    <!-- Dependencies Section -->
-    <div v-if="hasDependencies">
-      <h4 class="text-[10px] font-bold uppercase tracking-wide">Dependencies</h4>
-      <div class="space-y-2">
-        <!-- Blocked By -->
-        <div v-if="issue.blockedBy?.length">
-          <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocked By</h5>
-          <div class="space-y-0.5">
-            <div
-              v-for="id in sortedBlockedBy"
-              :key="id"
-              class="group/dep -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
-              @click="emit('navigate-to-issue', id)"
-            >
-              <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
-              <span v-if="getIssueTitle(id)" class="truncate text-xs text-muted-foreground">{{ getIssueTitle(id) }}</span>
-              <span
-                v-if="!readonly"
-                class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
-                @click.stop="handleRemoveDependency(id, 'blockedBy')"
-              >
-                <X class="w-3 h-3" />
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Blocks -->
-        <div v-if="issue.blocks?.length">
-          <h5 class="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocks</h5>
-          <div class="space-y-0.5">
-            <div
-              v-for="id in sortedBlocks"
-              :key="id"
-              class="group/dep -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
-              @click="emit('navigate-to-issue', id)"
-            >
-              <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
-              <span v-if="getIssueTitle(id)" class="truncate text-xs text-muted-foreground">{{ getIssueTitle(id) }}</span>
-              <span
-                v-if="!readonly"
-                class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
-                @click.stop="handleRemoveDependency(id, 'blocks')"
-              >
-                <X class="w-3 h-3" />
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -390,5 +308,120 @@ const formatEstimate = (minutes: number) => {
         <p class="text-xs font-mono">{{ issue.specId }}</p>
       </div>
     </div>
+
+    <IssueAttachmentsSection
+      :issue-id="issue.id"
+      :readonly="readonly"
+      @detach-image="emit('detach-image', $event)"
+    />
+
+    <Tabs
+      class="rounded-xl border border-border/70 bg-card/60 p-3"
+      default-value="comments"
+    >
+      <TabsList class="grid w-full grid-cols-3">
+        <TabsTrigger value="comments">{{ commentsTabLabel }}</TabsTrigger>
+        <TabsTrigger value="children">{{ childrenTabLabel }}</TabsTrigger>
+        <TabsTrigger value="dependencies">{{ dependenciesTabLabel }}</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="comments" class="mt-3">
+        <CommentSection
+          :comments="issue.comments || []"
+          :readonly="readonly"
+          embedded
+          @add-comment="emit('add-comment', $event)"
+        />
+      </TabsContent>
+
+      <TabsContent value="children" class="mt-3 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <h4 class="text-[10px] font-bold uppercase tracking-wide">Children</h4>
+            <span class="text-[10px] text-muted-foreground">({{ sortedChildren.length }})</span>
+          </div>
+          <Button
+            v-if="issue.type === 'epic' && !readonly"
+            type="button"
+            variant="ghost"
+            size="sm"
+            @click="emit('create-child', issue.id)"
+          >
+            <Plus />
+          </Button>
+        </div>
+        <div class="space-y-0.5">
+          <template v-if="sortedChildren.length">
+            <div
+              v-for="child in sortedChildren"
+              :key="child.id"
+              class="flex items-center justify-between gap-2 rounded px-1 py-1 hover:bg-muted/50 cursor-pointer -mx-1"
+              @click="emit('navigate-to-issue', child.id)"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="shrink-0 font-mono text-xs text-foreground hover:underline">{{ getShortId(child.id) }}</span>
+                <span class="text-xs truncate">{{ child.title }}</span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <StatusBadge :status="child.status" size="sm" />
+                <PriorityBadge :priority="child.priority" size="sm" />
+              </div>
+            </div>
+          </template>
+          <p v-else class="text-xs text-muted-foreground">No children yet</p>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="dependencies" class="mt-3">
+        <div v-if="hasDependencies" class="space-y-3">
+          <div v-if="issue.blockedBy?.length">
+            <h5 class="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocked By</h5>
+            <div class="space-y-0.5">
+              <div
+                v-for="id in sortedBlockedBy"
+                :key="id"
+                class="group/dep -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
+                @click="emit('navigate-to-issue', id)"
+              >
+                <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
+                <span v-if="getIssueTitle(id)" class="truncate text-xs text-muted-foreground">{{ getIssueTitle(id) }}</span>
+                <span
+                  v-if="!readonly"
+                  class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
+                  @click.stop="handleRemoveDependency(id, 'blockedBy')"
+                >
+                  <X class="h-3 w-3" />
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="issue.blocks?.length">
+            <h5 class="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Blocks</h5>
+            <div class="space-y-0.5">
+              <div
+                v-for="id in sortedBlocks"
+                :key="id"
+                class="group/dep -mx-1 flex cursor-pointer items-center gap-2 rounded border border-border/40 bg-muted/50 px-2 py-1 hover:bg-muted"
+                @click="emit('navigate-to-issue', id)"
+              >
+                <span :class="['text-xs font-mono shrink-0 hover:underline', depTextColor(availableIssues?.find(i => i.id === id)?.priority)]">{{ getShortId(id) }}</span>
+                <span v-if="getIssueTitle(id)" class="truncate text-xs text-muted-foreground">{{ getIssueTitle(id) }}</span>
+                <span
+                  v-if="!readonly"
+                  class="ml-auto opacity-0 group-hover/dep:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
+                  @click.stop="handleRemoveDependency(id, 'blocks')"
+                >
+                  <X class="h-3 w-3" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="py-3 text-center text-xs text-muted-foreground">
+          No dependencies yet
+        </div>
+      </TabsContent>
+    </Tabs>
   </div>
 </template>

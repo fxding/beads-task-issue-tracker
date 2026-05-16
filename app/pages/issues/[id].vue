@@ -6,8 +6,6 @@ import FolderPicker from '~/components/dashboard/FolderPicker.vue'
 import IssueDetailHeader from '~/components/details/IssueDetailHeader.vue'
 import IssuePropertiesPanel from '~/components/details/IssuePropertiesPanel.vue'
 import IssuePreview from '~/components/details/IssuePreview.vue'
-import IssueAttachmentsSection from '~/components/details/IssueAttachmentsSection.vue'
-import CommentSection from '~/components/details/CommentSection.vue'
 import DebugPanel from '~/components/layout/DebugPanel.vue'
 import DialogsLayer from '~/components/layout/DialogsLayer.vue'
 import { Button } from '~/components/ui/button'
@@ -375,20 +373,12 @@ onMounted(async () => {
                   :readonly="currentIssue.status === 'closed'"
                   :available-issues="availableIssuesForDeps"
                   @navigate-to-issue="handleNavigateToIssue"
+                  @detach-image="confirmDetachImage"
+                  @add-comment="handleAddComment"
                   @save-inline="handleSaveIssue"
                   @create-child="handleCreateChild"
                   @open-add-blocker="openAddBlockerDialog"
                   @remove-dependency="confirmRemoveDependency"
-                />
-                <IssueAttachmentsSection
-                  :issue-id="currentIssue.id"
-                  :readonly="currentIssue.status === 'closed'"
-                  @detach-image="confirmDetachImage"
-                />
-                <CommentSection
-                  :comments="currentIssue.comments || []"
-                  :readonly="currentIssue.status === 'closed'"
-                  @add-comment="handleAddComment"
                 />
               </div>
             </ScrollArea>

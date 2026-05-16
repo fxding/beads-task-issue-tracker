@@ -9,6 +9,7 @@ import { LinkifiedText } from '~/components/ui/linkified-text'
 const props = defineProps<{
   comments: Comment[]
   readonly?: boolean
+  embedded?: boolean
 }>()
 
 // Collapsible state (persisted per project, open by default)
@@ -66,6 +67,7 @@ const handleSubmit = () => {
 <template>
   <div class="space-y-3">
     <button
+      v-if="!embedded"
       class="flex items-center gap-1.5 w-full text-left group"
       @click="toggleComments"
     >
@@ -84,7 +86,7 @@ const handleSubmit = () => {
       </h4>
     </button>
 
-    <div v-show="isCommentsOpen" class="pl-4.5 space-y-3">
+    <div v-show="embedded || isCommentsOpen" :class="embedded ? 'space-y-3' : 'pl-4.5 space-y-3'">
       <ScrollArea v-if="sortedComments.length > 0" class="h-40">
         <div class="space-y-3 pr-4">
           <div
