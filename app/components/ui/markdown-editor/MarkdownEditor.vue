@@ -77,7 +77,7 @@ const editor = useEditor({
   ],
   editorProps: {
     attributes: {
-      class: 'markdown-editor__content rich-text-editor text-xs outline-none',
+      class: 'markdown-editor__content rich-text-editor text-sm outline-none',
     },
   },
   onUpdate({ editor }) {
