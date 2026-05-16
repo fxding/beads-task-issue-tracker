@@ -773,9 +773,17 @@ export function useIssues() {
     isUpdating.value = true
     error.value = null
     try {
-      await bdLabelAdd(id, label, getPath())
-      // Refresh the issue to reflect the change
-      await fetchIssue(id)
+      try {
+        await bdLabelAdd(id, label, getPath())
+        await fetchIssue(id)
+      } catch {
+        const issue = issues.value.find(i => i.id === id) ?? selectedIssue.value
+        const nextLabels = issue?.labels?.includes(label)
+          ? issue.labels
+          : [...(issue?.labels || []), label].sort((a, b) => a.localeCompare(b))
+
+        await updateIssue(id, { labels: nextLabels })
+      }
       return true
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to add label'
@@ -790,9 +798,15 @@ export function useIssues() {
     isUpdating.value = true
     error.value = null
     try {
-      await bdLabelRemove(id, label, getPath())
-      // Refresh the issue to reflect the change
-      await fetchIssue(id)
+      try {
+        await bdLabelRemove(id, label, getPath())
+        await fetchIssue(id)
+      } catch {
+        const issue = issues.value.find(i => i.id === id) ?? selectedIssue.value
+        const nextLabels = (issue?.labels || []).filter(existing => existing !== label)
+
+        await updateIssue(id, { labels: nextLabels })
+      }
       return true
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to remove label'

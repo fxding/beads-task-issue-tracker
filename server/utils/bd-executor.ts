@@ -230,8 +230,8 @@ export async function bdUpdate(
   if (updates.assignee) {
     args.push(`--assignee=${updates.assignee}`)
   }
-  if (updates.labels?.length) {
-    args.push(`--labels=${updates.labels.join(',')}`)
+  if (updates.labels) {
+    args.push(`--set-labels=${updates.labels.join(',')}`)
   }
   if (updates.externalRef) {
     args.push(`--external-ref="${escapeQuotes(updates.externalRef)}"`)

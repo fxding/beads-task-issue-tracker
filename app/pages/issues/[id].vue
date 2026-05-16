@@ -90,6 +90,30 @@ const currentProjectName = computed(() => {
   const project = projects.value.find(f => f.path === beadsPath.value)
   return project?.name
 })
+const availableLabels = computed(() => {
+  const labelSet = new Set<string>()
+  for (const issue of issues.value) {
+    issue.labels?.forEach(label => labelSet.add(label))
+  }
+  return Array.from(labelSet).sort()
+})
+const availableAssignees = computed(() => {
+  const assigneeSet = new Set<string>()
+  for (const issue of issues.value) {
+    if (issue.assignee) {
+      assigneeSet.add(issue.assignee)
+    }
+  }
+  return Array.from(assigneeSet).sort()
+})
+const availableParents = computed(() =>
+  issues.value
+    .filter(issue => issue.type === 'epic' && issue.id !== currentIssue.value?.id && issue.status !== 'closed')
+    .map(issue => ({
+      id: issue.id,
+      title: issue.title,
+    })),
+)
 const showOnboarding = computed(() => projects.value.length === 0 && !hasStoredPath.value)
 const sidebarProviderStyle = computed<Record<string, string>>(() => ({
   '--sidebar-width': `${leftSidebarWidth.value}px`,
@@ -386,7 +410,12 @@ onMounted(async () => {
             <div class="lg:sticky lg:top-4 lg:justify-self-end lg:w-[320px]">
               <IssuePropertiesPanel
                 :issue="currentIssue"
+                :readonly="currentIssue.status === 'closed'"
+                :available-labels="availableLabels"
+                :available-assignees="availableAssignees"
+                :available-parents="availableParents"
                 @navigate-to-issue="handleNavigateToIssue"
+                @save-inline="handleSaveIssue"
               />
             </div>
           </div>

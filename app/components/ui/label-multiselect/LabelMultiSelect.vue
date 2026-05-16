@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { X, Plus, ChevronDown } from 'lucide-vue-next'
+import { X, Plus } from 'lucide-vue-next'
 import LabelBadge from '~/components/issues/LabelBadge.vue'
 
 const props = withDefaults(defineProps<{
@@ -107,7 +107,6 @@ const handleKeydown = (e: KeyboardEvent) => {
       </span>
     </div>
 
-    <!-- Input with dropdown -->
     <div class="relative">
       <input
         ref="inputRef"
@@ -120,13 +119,11 @@ const handleKeydown = (e: KeyboardEvent) => {
         @keydown="handleKeydown"
       />
 
-      <!-- Dropdown -->
       <div
         v-if="isOpen && (filteredLabels.length > 0 || showCreateOption)"
-        class="absolute z-50 mt-1 w-full min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
+        class="mt-1 w-full min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
       >
         <div class="p-1 max-h-48 overflow-y-auto">
-          <!-- Create new option -->
           <button
             v-if="showCreateOption"
             type="button"
@@ -138,7 +135,6 @@ const handleKeydown = (e: KeyboardEvent) => {
             <span class="text-sky-500">Create "{{ searchQuery.trim() }}"</span>
           </button>
 
-          <!-- Existing labels -->
           <button
             v-for="label in filteredLabels"
             :key="label"
@@ -152,10 +148,9 @@ const handleKeydown = (e: KeyboardEvent) => {
         </div>
       </div>
 
-      <!-- Empty state when open but no results -->
       <div
         v-if="isOpen && filteredLabels.length === 0 && !showCreateOption && searchQuery"
-        class="absolute z-50 mt-1 w-full min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
+        class="mt-1 w-full min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
       >
         <div class="px-2 py-3 text-xs text-muted-foreground text-center">
           No labels found
