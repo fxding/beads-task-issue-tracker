@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import type { Issue } from '~/types/issue'
 import type { BoardColumn, BoardColumnId } from '~/utils/issue-helpers'
 import LabelBadge from '~/components/issues/LabelBadge.vue'
@@ -21,6 +21,9 @@ const emit = defineEmits<{
 
 const draggingIssueId = ref<string | null>(null)
 const dragOverColumnId = ref<BoardColumnId | null>(null)
+const boardRoot = useTemplateRef<HTMLElement>('boardRoot')
+
+const cardRects = new Map<string, DOMRect>()
 
 const visibleColumns = computed(() =>
   props.columns.filter(column => !props.hiddenColumns.includes(column.definition.id)),
@@ -86,10 +89,74 @@ const handleDrop = (columnId: BoardColumnId) => {
   }
   clearDragState()
 }
+
+const captureCardRects = () => {
+  cardRects.clear()
+  const cards = boardRoot.value?.querySelectorAll<HTMLElement>('[data-issue-id]')
+  cards?.forEach((card) => {
+    const issueId = card.dataset.issueId
+    if (issueId) {
+      cardRects.set(issueId, card.getBoundingClientRect())
+    }
+  })
+}
+
+const runFlipAnimation = async () => {
+  const previousRects = new Map(cardRects)
+  await nextTick()
+
+  const cards = boardRoot.value?.querySelectorAll<HTMLElement>('[data-issue-id]')
+  cards?.forEach((card) => {
+    const issueId = card.dataset.issueId
+    if (!issueId) return
+
+    const previousRect = previousRects.get(issueId)
+    if (!previousRect) return
+
+    const nextRect = card.getBoundingClientRect()
+    const deltaX = previousRect.left - nextRect.left
+    const deltaY = previousRect.top - nextRect.top
+
+    if (!deltaX && !deltaY) return
+
+    card.animate([
+      {
+        transform: `translate(${deltaX}px, ${deltaY}px) scale(0.985)`,
+        boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
+      },
+      {
+        transform: 'translate(0, 0) scale(1)',
+        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+      },
+    ], {
+      duration: 240,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    })
+  })
+
+  captureCardRects()
+}
+
+watch(
+  () => props.columns.map(column => ({
+    id: column.definition.id,
+    issues: column.issues.map(issue => issue.id),
+  })),
+  async (_, previous) => {
+    if (!previous) {
+      await nextTick()
+      captureCardRects()
+      return
+    }
+
+    await runFlipAnimation()
+  },
+  { deep: true, immediate: true },
+)
 </script>
 
 <template>
-  <div class="flex h-full flex-col overflow-hidden bg-background">
+  <div ref="boardRoot" class="flex h-full flex-col overflow-hidden bg-background">
     <div class="border-b border-border/60 px-6 py-4">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="space-y-1">
@@ -161,14 +228,11 @@ const handleDrop = (columnId: BoardColumnId) => {
             </button>
           </header>
 
-          <TransitionGroup
-            tag="div"
-            class="flex-1 space-y-3 overflow-y-auto px-2 pb-2"
-            name="board-card"
-          >
+          <div class="flex-1 space-y-3 overflow-y-auto px-2 pb-2">
             <article
               v-for="issue in column.issues"
               :key="issue.id"
+              :data-issue-id="issue.id"
               draggable="true"
               class="board-card group cursor-grab rounded-xl border border-border/70 bg-background p-3 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[transform,box-shadow,border-color,opacity] duration-200 ease-out hover:shadow-sm"
               :class="[
@@ -213,7 +277,7 @@ const handleDrop = (columnId: BoardColumnId) => {
                 <span v-if="issue.children?.length" class="text-muted-foreground/70">· {{ issue.children.length }} sub</span>
               </div>
             </article>
-          </TransitionGroup>
+          </div>
 
           <div
             v-if="column.issues.length === 0"
@@ -240,22 +304,3 @@ const handleDrop = (columnId: BoardColumnId) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.board-card-move,
-.board-card-enter-active,
-.board-card-leave-active {
-  transition: transform 220ms ease, opacity 180ms ease;
-}
-
-.board-card-enter-from,
-.board-card-leave-to {
-  opacity: 0;
-  transform: translateY(10px) scale(0.98);
-}
-
-.board-card-leave-active {
-  position: relative;
-  z-index: 0;
-}
-</style>

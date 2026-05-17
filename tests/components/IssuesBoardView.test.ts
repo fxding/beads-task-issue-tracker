@@ -18,36 +18,6 @@ vi.mock('~/components/ui/button', () => ({
   }),
 }))
 
-vi.mock('~/components/issues/StatusBadge.vue', () => ({
-  default: defineComponent({
-    name: 'StatusBadgeStub',
-    props: ['status'],
-    setup(props) {
-      return () => h('span', `status:${props.status}`)
-    },
-  }),
-}))
-
-vi.mock('~/components/issues/PriorityBadge.vue', () => ({
-  default: defineComponent({
-    name: 'PriorityBadgeStub',
-    props: ['priority'],
-    setup(props) {
-      return () => h('span', `priority:${props.priority}`)
-    },
-  }),
-}))
-
-vi.mock('~/components/issues/TypeBadge.vue', () => ({
-  default: defineComponent({
-    name: 'TypeBadgeStub',
-    props: ['type'],
-    setup(props) {
-      return () => h('span', `type:${props.type}`)
-    },
-  }),
-}))
-
 vi.mock('~/components/issues/LabelBadge.vue', () => ({
   default: defineComponent({
     name: 'LabelBadgeStub',
