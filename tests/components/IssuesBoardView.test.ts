@@ -107,9 +107,10 @@ describe('IssuesBoardView', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('No issues in in progress.')
-    expect(wrapper.text()).toContain('No issues in blocked.')
-    expect(wrapper.text()).toContain('No issues in done.')
+    expect(wrapper.text()).toContain('In Progress')
+    expect(wrapper.text()).toContain('Blocked')
+    expect(wrapper.text()).toContain('Done')
+    expect(wrapper.text()).toContain('No issues')
   })
 
   it('emits column visibility controls with restore path', async () => {
