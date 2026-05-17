@@ -24,14 +24,19 @@ const dragOverColumnId = ref<BoardColumnId | null>(null)
 const boardRoot = useTemplateRef<HTMLElement>('boardRoot')
 
 const cardRects = new Map<string, DOMRect>()
+const previousColumnIssueIds = new Map<BoardColumnId, string[]>()
 
 const visibleColumns = computed(() =>
-  props.columns.filter(column => !props.hiddenColumns.includes(column.definition.id)),
+  props.columns.filter(column =>
+    !props.hiddenColumns.includes(column.definition.id) && column.issues.length > 0,
+  ),
 )
 
 const hiddenColumnLabels = computed(() =>
   props.columns
-    .filter(column => props.hiddenColumns.includes(column.definition.id))
+    .filter(column =>
+      props.hiddenColumns.includes(column.definition.id) || column.issues.length === 0,
+    )
     .map(column => ({ id: column.definition.id, label: column.definition.label })),
 )
 
@@ -101,14 +106,45 @@ const captureCardRects = () => {
   })
 }
 
+const snapshotColumnIssueIds = () => {
+  previousColumnIssueIds.clear()
+  props.columns.forEach((column) => {
+    previousColumnIssueIds.set(column.definition.id, column.issues.map(issue => issue.id))
+  })
+}
+
+const getChangedIssueIds = () => {
+  const changedIssueIds = new Set<string>()
+
+  props.columns.forEach((column) => {
+    const previousIds = previousColumnIssueIds.get(column.definition.id) ?? []
+    const nextIds = column.issues.map(issue => issue.id)
+
+    if (previousIds.length !== nextIds.length || previousIds.some((id, index) => id !== nextIds[index])) {
+      previousIds.forEach(id => changedIssueIds.add(id))
+      nextIds.forEach(id => changedIssueIds.add(id))
+    }
+  })
+
+  return changedIssueIds
+}
+
 const runFlipAnimation = async () => {
   const previousRects = new Map(cardRects)
+  const changedIssueIds = getChangedIssueIds()
   await nextTick()
+
+  if (changedIssueIds.size === 0) {
+    captureCardRects()
+    snapshotColumnIssueIds()
+    return
+  }
 
   const cards = boardRoot.value?.querySelectorAll<HTMLElement>('[data-issue-id]')
   cards?.forEach((card) => {
     const issueId = card.dataset.issueId
     if (!issueId) return
+    if (!changedIssueIds.has(issueId)) return
 
     const previousRect = previousRects.get(issueId)
     if (!previousRect) return
@@ -135,6 +171,7 @@ const runFlipAnimation = async () => {
   })
 
   captureCardRects()
+  snapshotColumnIssueIds()
 }
 
 watch(
@@ -146,6 +183,7 @@ watch(
     if (!previous) {
       await nextTick()
       captureCardRects()
+      snapshotColumnIssueIds()
       return
     }
 
@@ -184,7 +222,7 @@ watch(
             </Button>
           </template>
           <span v-else class="text-xs text-muted-foreground">
-            All lanes are visible.
+            All active lanes are visible.
           </span>
         </div>
       </div>
@@ -193,16 +231,15 @@ watch(
     <div class="flex-1 overflow-auto p-6">
       <div
         v-if="visibleColumns.length > 0"
-        class="grid min-h-full gap-4"
-        :class="visibleColumns.length >= 4 ? 'xl:grid-cols-4' : visibleColumns.length === 3 ? 'lg:grid-cols-3' : visibleColumns.length === 2 ? 'md:grid-cols-2' : 'grid-cols-1'"
+        class="inline-grid min-h-full auto-cols-[22rem] grid-flow-col gap-4 justify-start"
       >
         <section
           v-for="column in visibleColumns"
           :key="column.definition.id"
-          class="board-lane flex min-h-[30rem] flex-col rounded-2xl border bg-muted/20 transition-[border-color,box-shadow,background-color,transform] duration-200 ease-out"
+          class="board-lane flex min-h-[30rem] w-[22rem] min-w-[22rem] max-w-[22rem] flex-col rounded-2xl border bg-muted/20"
           :class="[
             laneToneMap[column.definition.id].border,
-            dragOverColumnId === column.definition.id ? 'border-primary/60 bg-primary/5 ring-2 ring-primary/15 -translate-y-0.5' : '',
+            dragOverColumnId === column.definition.id ? 'border-primary/60 ring-2 ring-primary/15' : '',
           ]"
           @dragover.prevent="dragOverColumnId = column.definition.id"
           @dragleave="dragOverColumnId = dragOverColumnId === column.definition.id ? null : dragOverColumnId"
@@ -281,8 +318,8 @@ watch(
 
           <div
             v-if="column.issues.length === 0"
-            class="mx-2 mb-2 flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 px-4 text-center transition-colors duration-200"
-            :class="dragOverColumnId === column.definition.id ? 'border-primary/50 bg-primary/5' : ''"
+            class="mx-2 mb-2 flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 px-4 text-center"
+            :class="dragOverColumnId === column.definition.id ? 'border-primary/50' : ''"
           >
             <p class="text-sm text-muted-foreground">No issues</p>
           </div>
@@ -294,8 +331,8 @@ watch(
         class="flex h-full min-h-[24rem] items-center justify-center rounded-3xl border border-dashed border-border bg-card/60 p-8 text-center"
       >
         <div class="space-y-2">
-          <h3 class="text-lg font-semibold">All columns are hidden</h3>
-          <p class="text-sm text-muted-foreground">Restore at least one lane to continue using the board.</p>
+          <h3 class="text-lg font-semibold">No visible lanes with issues</h3>
+          <p class="text-sm text-muted-foreground">Show a hidden lane to continue using the board.</p>
           <Button size="sm" class="rounded-full" @click="emit('restore-columns')">
             Restore columns
           </Button>

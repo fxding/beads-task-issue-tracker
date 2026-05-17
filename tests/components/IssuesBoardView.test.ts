@@ -67,7 +67,7 @@ describe('IssuesBoardView', () => {
     expect(wrapper.text()).toContain('Pinned')
   })
 
-  it('shows empty state text for visible empty columns', () => {
+  it('hides empty columns and exposes them through restore controls', () => {
     const columns = groupIssuesForBoard([makeIssue({ id: 'open-1', status: 'open' })])
 
     const wrapper = mount(IssuesBoardView, {
@@ -77,10 +77,11 @@ describe('IssuesBoardView', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('In Progress')
-    expect(wrapper.text()).toContain('Blocked')
-    expect(wrapper.text()).toContain('Done')
-    expect(wrapper.text()).toContain('No issues')
+    expect(wrapper.text()).toContain('Backlog')
+    expect(wrapper.text()).not.toContain('In Progress0')
+    expect(wrapper.text()).toContain('Show In Progress')
+    expect(wrapper.text()).toContain('Show Blocked')
+    expect(wrapper.text()).toContain('Show Done')
   })
 
   it('emits column visibility controls with restore path', async () => {
