@@ -792,6 +792,7 @@ watch(
 
           <IssuesBoardView
             v-else
+            class="min-h-0 flex-1"
             :columns="boardColumns"
             :hidden-columns="hiddenBoardColumns"
             :active-move-id="activeBoardMoveId"
