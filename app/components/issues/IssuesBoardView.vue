@@ -132,10 +132,10 @@ const handleDrop = (columnId: BoardColumnId) => {
         <section
           v-for="column in visibleColumns"
           :key="column.definition.id"
-          class="flex min-h-[30rem] flex-col rounded-2xl border bg-muted/20"
+          class="board-lane flex min-h-[30rem] flex-col rounded-2xl border bg-muted/20 transition-[border-color,box-shadow,background-color,transform] duration-200 ease-out"
           :class="[
             laneToneMap[column.definition.id].border,
-            dragOverColumnId === column.definition.id ? 'border-primary/60 ring-2 ring-primary/20' : '',
+            dragOverColumnId === column.definition.id ? 'border-primary/60 bg-primary/5 ring-2 ring-primary/15 -translate-y-0.5' : '',
           ]"
           @dragover.prevent="dragOverColumnId = column.definition.id"
           @dragleave="dragOverColumnId = dragOverColumnId === column.definition.id ? null : dragOverColumnId"
@@ -161,15 +161,19 @@ const handleDrop = (columnId: BoardColumnId) => {
             </button>
           </header>
 
-          <div class="flex-1 space-y-3 overflow-y-auto px-2 pb-2">
+          <TransitionGroup
+            tag="div"
+            class="flex-1 space-y-3 overflow-y-auto px-2 pb-2"
+            name="board-card"
+          >
             <article
               v-for="issue in column.issues"
               :key="issue.id"
               draggable="true"
-              class="group cursor-grab rounded-xl border border-border/70 bg-background p-3 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:shadow-sm"
+              class="board-card group cursor-grab rounded-xl border border-border/70 bg-background p-3 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[transform,box-shadow,border-color,opacity] duration-200 ease-out hover:shadow-sm"
               :class="[
                 laneToneMap[column.definition.id].card,
-                draggingIssueId === issue.id ? 'opacity-50' : '',
+                draggingIssueId === issue.id ? 'scale-[0.985] opacity-55 shadow-md' : '',
                 activeMoveId === issue.id ? 'border-primary/60 ring-2 ring-primary/20' : '',
               ]"
               @click="emit('select', issue)"
@@ -209,13 +213,14 @@ const handleDrop = (columnId: BoardColumnId) => {
                 <span v-if="issue.children?.length" class="text-muted-foreground/70">· {{ issue.children.length }} sub</span>
               </div>
             </article>
+          </TransitionGroup>
 
-            <div
-              v-if="column.issues.length === 0"
-              class="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 px-4 text-center"
-            >
-              <p class="text-sm text-muted-foreground">No issues</p>
-            </div>
+          <div
+            v-if="column.issues.length === 0"
+            class="mx-2 mb-2 flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 px-4 text-center transition-colors duration-200"
+            :class="dragOverColumnId === column.definition.id ? 'border-primary/50 bg-primary/5' : ''"
+          >
+            <p class="text-sm text-muted-foreground">No issues</p>
           </div>
         </section>
       </div>
@@ -235,3 +240,22 @@ const handleDrop = (columnId: BoardColumnId) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.board-card-move,
+.board-card-enter-active,
+.board-card-leave-active {
+  transition: transform 220ms ease, opacity 180ms ease;
+}
+
+.board-card-enter-from,
+.board-card-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+
+.board-card-leave-active {
+  position: relative;
+  z-index: 0;
+}
+</style>
