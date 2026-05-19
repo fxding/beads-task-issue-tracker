@@ -311,6 +311,16 @@ describe('board helpers', () => {
     expect(columns[2]!.issues.map(issue => issue.id)).toEqual(['blocked-1'])
     expect(columns[3]!.issues.map(issue => issue.id)).toEqual(['closed-1'])
   })
+
+  it('keeps pinned issues at the top of their board lane', () => {
+    const columns = groupIssuesForBoard([
+      makeIssue({ id: 'open-1', status: 'open', priority: 'p0' }),
+      makeIssue({ id: 'deferred-1', status: 'deferred', priority: 'p3' }),
+      makeIssue({ id: 'hooked-1', status: 'hooked', priority: 'p2' }),
+    ], ['deferred-1'])
+
+    expect(columns[0]!.issues.map(issue => issue.id)).toEqual(['deferred-1', 'open-1', 'hooked-1'])
+  })
 })
 
 // ---------------------------------------------------------------------------

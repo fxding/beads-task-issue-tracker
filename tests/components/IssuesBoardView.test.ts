@@ -84,6 +84,23 @@ describe('IssuesBoardView', () => {
     expect(wrapper.text()).toContain('Show Done')
   })
 
+  it('shows a manually hidden lane through restore controls even when it has issues', () => {
+    const columns = groupIssuesForBoard([
+      makeIssue({ id: 'open-1', status: 'open' }),
+      makeIssue({ id: 'progress-1', status: 'in_progress' }),
+    ])
+
+    const wrapper = mount(IssuesBoardView, {
+      props: {
+        columns,
+        hiddenColumns: ['in_progress'],
+      },
+    })
+
+    expect(wrapper.text()).not.toContain('Working issue')
+    expect(wrapper.text()).toContain('Show In Progress')
+  })
+
   it('emits column visibility controls with restore path', async () => {
     const columns = groupIssuesForBoard([makeIssue({ id: 'open-1', status: 'open' })])
 

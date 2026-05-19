@@ -89,7 +89,9 @@ const { isLeftSidebarOpen, leftSidebarWidth, startResizeLeft } = useSidebarResiz
 
 type IssuesView = 'table' | 'list' | 'board' | 'stats'
 const activeIssuesView = useProjectStorage<IssuesView>('activeIssuesView', 'table')
-const hiddenBoardColumns = useProjectStorage<BoardColumnId[]>('hiddenBoardColumns', [])
+const DEFAULT_HIDDEN_BOARD_COLUMNS: BoardColumnId[] = ['in_progress', 'blocked', 'done']
+const hiddenBoardColumns = useProjectStorage<BoardColumnId[]>('hiddenBoardColumns', [...DEFAULT_HIDDEN_BOARD_COLUMNS])
+const boardColumnVisibilityInitialized = useProjectStorage('boardColumnVisibilityInitialized', false)
 const activeBoardMoveId = ref<string | null>(null)
 const issuesViewMeta: Record<IssuesView, { label: string, description: string }> = {
   table: {
@@ -548,7 +550,7 @@ const inProgressIssues = computed(() => {
 // Pinned issues
 const { pinnedIssueIds, pinnedSortMode, togglePin, reorderPinned, toggleSortMode: togglePinnedSort, getPinnedIssues } = usePinnedIssues()
 const pinnedIssuesList = computed(() => getPinnedIssues(issues.value))
-const boardColumns = computed(() => groupIssuesForBoard(sortedIssues.value))
+const boardColumns = computed(() => groupIssuesForBoard(sortedIssues.value, pinnedIssueIds.value))
 
 const handleRemoveLabelFilter = (label: string) => {
   toggleLabelFilter(label)
@@ -593,6 +595,15 @@ const toggleBoardColumn = (columnId: BoardColumnId) => {
 const restoreBoardColumns = () => {
   hiddenBoardColumns.value = []
 }
+
+watch(boardColumns, (columns) => {
+  if (boardColumnVisibilityInitialized.value) return
+
+  hiddenBoardColumns.value = columns
+    .filter(column => column.issues.length === 0)
+    .map(column => column.definition.id)
+  boardColumnVisibilityInitialized.value = true
+}, { immediate: true })
 
 const applyLocalIssueStatus = (issueId: string, status: IssueStatus) => {
   const nextUpdatedAt = new Date().toISOString()

@@ -467,6 +467,15 @@ function compareBoardIssues(a: Issue, b: Issue): number {
   return naturalCompare(a.id.toLowerCase(), b.id.toLowerCase())
 }
 
+function compareBoardIssuesWithPinned(a: Issue, b: Issue, pinnedSet: Set<string>): number {
+  const aPinned = pinnedSet.has(a.id) ? 0 : 1
+  const bPinned = pinnedSet.has(b.id) ? 0 : 1
+
+  if (aPinned !== bPinned) return aPinned - bPinned
+
+  return compareBoardIssues(a, b)
+}
+
 /**
  * Group issues into explicit board columns.
  *
@@ -477,8 +486,9 @@ function compareBoardIssues(a: Issue, b: Issue): number {
  * - closed → done
  * - tombstone → excluded from the board
  */
-export function groupIssuesForBoard(issues: Issue[]): BoardColumn[] {
+export function groupIssuesForBoard(issues: Issue[], pinnedIds: string[] = []): BoardColumn[] {
   const buckets = new Map<BoardColumnId, Issue[]>()
+  const pinnedSet = new Set(pinnedIds)
 
   for (const column of BOARD_COLUMNS) {
     buckets.set(column.id, [])
@@ -492,7 +502,7 @@ export function groupIssuesForBoard(issues: Issue[]): BoardColumn[] {
   }
 
   return BOARD_COLUMNS.map(definition => {
-    const columnIssues = [...(buckets.get(definition.id) ?? [])].sort(compareBoardIssues)
+    const columnIssues = [...(buckets.get(definition.id) ?? [])].sort((a, b) => compareBoardIssuesWithPinned(a, b, pinnedSet))
 
     return {
       definition,
