@@ -265,7 +265,7 @@ watch(
             </button>
           </header>
 
-          <div class="flex-1 space-y-3 overflow-y-auto px-2 pb-2">
+          <div class="flex flex-1 flex-col overflow-y-auto px-2 pb-2">
             <article
               v-for="issue in column.issues"
               :key="issue.id"
@@ -314,14 +314,14 @@ watch(
                 <span v-if="issue.children?.length" class="text-muted-foreground/70">· {{ issue.children.length }} sub</span>
               </div>
             </article>
-          </div>
 
-          <div
-            v-if="column.issues.length === 0"
-            class="mx-2 mb-2 flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 px-4 text-center"
-            :class="dragOverColumnId === column.definition.id ? 'border-primary/50' : ''"
-          >
-            <p class="text-sm text-muted-foreground">No issues</p>
+            <div
+              v-if="column.issues.length === 0"
+              class="mt-0 flex min-h-40 flex-col items-center justify-start rounded-xl border border-dashed border-border/70 bg-background/60 px-4 py-4 text-center"
+              :class="dragOverColumnId === column.definition.id ? 'border-primary/50' : ''"
+            >
+              <p class="text-sm text-muted-foreground">No issues</p>
+            </div>
           </div>
         </section>
       </div>
