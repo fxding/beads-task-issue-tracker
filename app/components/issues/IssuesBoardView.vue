@@ -265,7 +265,7 @@ watch(
             </button>
           </header>
 
-          <div class="flex flex-1 flex-col overflow-y-auto px-2 pb-2">
+          <div class="flex flex-1 flex-col gap-3 overflow-y-auto px-2 pb-2">
             <article
               v-for="issue in column.issues"
               :key="issue.id"
