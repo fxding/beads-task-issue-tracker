@@ -25,6 +25,7 @@ const boardRoot = useTemplateRef<HTMLElement>('boardRoot')
 
 const cardRects = new Map<string, DOMRect>()
 const previousColumnIssueIds = new Map<BoardColumnId, string[]>()
+let flipAnimationRunId = 0
 
 const visibleColumns = computed(() =>
   props.columns.filter(column =>
@@ -129,10 +130,42 @@ const getChangedIssueIds = () => {
   return changedIssueIds
 }
 
+const getMovedIssueIds = () => {
+  const previousColumnByIssueId = new Map<string, BoardColumnId>()
+  const nextColumnByIssueId = new Map<string, BoardColumnId>()
+  const movedIssueIds = new Set<string>()
+
+  previousColumnIssueIds.forEach((issueIds, columnId) => {
+    issueIds.forEach(issueId => previousColumnByIssueId.set(issueId, columnId))
+  })
+
+  props.columns.forEach((column) => {
+    column.issues.forEach(issue => nextColumnByIssueId.set(issue.id, column.definition.id))
+  })
+
+  nextColumnByIssueId.forEach((columnId, issueId) => {
+    const previousColumnId = previousColumnByIssueId.get(issueId)
+    if (previousColumnId && previousColumnId !== columnId) {
+      movedIssueIds.add(issueId)
+    }
+  })
+
+  return movedIssueIds
+}
+
 const runFlipAnimation = async () => {
+  const runId = ++flipAnimationRunId
   const previousRects = new Map(cardRects)
-  const changedIssueIds = getChangedIssueIds()
+  const changedIssueIds = getMovedIssueIds()
+  if (changedIssueIds.size === 0) {
+    getChangedIssueIds().forEach(issueId => changedIssueIds.add(issueId))
+  }
+
   await nextTick()
+
+  if (runId !== flipAnimationRunId) {
+    return
+  }
 
   if (changedIssueIds.size === 0) {
     captureCardRects()
@@ -155,6 +188,7 @@ const runFlipAnimation = async () => {
 
     if (!deltaX && !deltaY) return
 
+    card.getAnimations?.().forEach(animation => animation.cancel())
     card.animate([
       {
         transform: `translate(${deltaX}px, ${deltaY}px) scale(0.985)`,

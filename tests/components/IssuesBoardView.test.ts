@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import IssuesBoardView from '~/components/issues/IssuesBoardView.vue'
 import { groupIssuesForBoard } from '~/utils/issue-helpers'
@@ -162,5 +162,66 @@ describe('IssuesBoardView', () => {
     await sections[1]!.trigger('drop')
 
     expect(wrapper.emitted('move')?.[0]).toEqual(['open-1', 'in_progress'])
+  })
+
+  it('animates only the card moved between lanes', async () => {
+    const animate = vi.fn()
+    const cancel = vi.fn()
+    const rects = new Map<string, DOMRect>([
+      ['open-1', { left: 10, top: 20 } as DOMRect],
+      ['open-2', { left: 10, top: 80 } as DOMRect],
+      ['progress-1', { left: 360, top: 20 } as DOMRect],
+    ])
+    const columns = groupIssuesForBoard([
+      makeIssue({ id: 'open-1', title: 'Moved issue', status: 'open' }),
+      makeIssue({ id: 'open-2', title: 'Neighbor issue', status: 'open' }),
+      makeIssue({ id: 'progress-1', title: 'Working issue', status: 'in_progress' }),
+    ])
+
+    const wrapper = mount(IssuesBoardView, {
+      props: {
+        columns,
+        hiddenColumns: [],
+      },
+      attachTo: document.body,
+    })
+
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+    const originalGetAnimations = HTMLElement.prototype.getAnimations
+    const originalAnimate = HTMLElement.prototype.animate
+
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      const issueId = this.dataset?.issueId
+      return rects.get(issueId!) ?? ({ left: 0, top: 0 } as DOMRect)
+    }
+    HTMLElement.prototype.getAnimations = vi.fn(() => [{ cancel } as unknown as Animation])
+    HTMLElement.prototype.animate = animate
+
+    await nextTick()
+    await nextTick()
+    animate.mockClear()
+    cancel.mockClear()
+
+    rects.set('open-1', { left: 360, top: 80 } as DOMRect)
+    rects.set('open-2', { left: 10, top: 20 } as DOMRect)
+    rects.set('progress-1', { left: 360, top: 20 } as DOMRect)
+
+    await wrapper.setProps({
+      columns: groupIssuesForBoard([
+        makeIssue({ id: 'open-1', title: 'Moved issue', status: 'in_progress' }),
+        makeIssue({ id: 'open-2', title: 'Neighbor issue', status: 'open' }),
+        makeIssue({ id: 'progress-1', title: 'Working issue', status: 'in_progress' }),
+      ]),
+    })
+    await nextTick()
+
+    expect(animate).toHaveBeenCalledTimes(1)
+    expect(cancel).toHaveBeenCalledTimes(1)
+    expect((animate.mock.instances[0] as HTMLElement).dataset.issueId).toBe('open-1')
+
+    HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect
+    HTMLElement.prototype.getAnimations = originalGetAnimations
+    HTMLElement.prototype.animate = originalAnimate
+    wrapper.unmount()
   })
 })
