@@ -164,7 +164,7 @@ describe('IssuesBoardView', () => {
     expect(wrapper.emitted('move')?.[0]).toEqual(['open-1', 'in_progress'])
   })
 
-  it('animates only the card moved between lanes', async () => {
+  it('animates moved cards and displaced lane neighbors smoothly', async () => {
     const animate = vi.fn()
     const cancel = vi.fn()
     const rects = new Map<string, DOMRect>([
@@ -215,9 +215,30 @@ describe('IssuesBoardView', () => {
     })
     await nextTick()
 
-    expect(animate).toHaveBeenCalledTimes(1)
-    expect(cancel).toHaveBeenCalledTimes(1)
-    expect((animate.mock.instances[0] as HTMLElement).dataset.issueId).toBe('open-1')
+    expect(animate).toHaveBeenCalledTimes(2)
+    expect(cancel).toHaveBeenCalledTimes(2)
+    const animatedIds = animate.mock.instances.map(instance => (instance as HTMLElement).dataset.issueId)
+    const movedCardAnimationIndex = animatedIds.indexOf('open-1')
+    expect(animatedIds).toEqual(['open-2', 'open-1'])
+    expect(animate.mock.calls[movedCardAnimationIndex]?.[0]).toEqual([
+      {
+        transform: 'translate3d(-350px, -60px, 0)',
+        offset: 0,
+      },
+      {
+        transform: 'translate3d(-63px, -10.799999999999999px, 0)',
+        offset: 0.72,
+      },
+      {
+        transform: 'translate3d(0, 0, 0)',
+        offset: 1,
+      },
+    ])
+    expect(animate.mock.calls[movedCardAnimationIndex]?.[1]).toMatchObject({
+      duration: 340,
+      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      fill: 'both',
+    })
 
     HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect
     HTMLElement.prototype.getAnimations = originalGetAnimations

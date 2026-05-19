@@ -467,11 +467,16 @@ function compareBoardIssues(a: Issue, b: Issue): number {
   return naturalCompare(a.id.toLowerCase(), b.id.toLowerCase())
 }
 
-function compareBoardIssuesWithPinned(a: Issue, b: Issue, pinnedSet: Set<string>): number {
+function compareBoardIssuesWithPinned(a: Issue, b: Issue, pinnedSet: Set<string>, recentlyMovedSet: Set<string>): number {
   const aPinned = pinnedSet.has(a.id) ? 0 : 1
   const bPinned = pinnedSet.has(b.id) ? 0 : 1
 
   if (aPinned !== bPinned) return aPinned - bPinned
+
+  const aRecentlyMoved = recentlyMovedSet.has(a.id) ? 0 : 1
+  const bRecentlyMoved = recentlyMovedSet.has(b.id) ? 0 : 1
+
+  if (aRecentlyMoved !== bRecentlyMoved) return aRecentlyMoved - bRecentlyMoved
 
   return compareBoardIssues(a, b)
 }
@@ -486,9 +491,10 @@ function compareBoardIssuesWithPinned(a: Issue, b: Issue, pinnedSet: Set<string>
  * - closed → done
  * - tombstone → excluded from the board
  */
-export function groupIssuesForBoard(issues: Issue[], pinnedIds: string[] = []): BoardColumn[] {
+export function groupIssuesForBoard(issues: Issue[], pinnedIds: string[] = [], recentlyMovedIds: string[] = []): BoardColumn[] {
   const buckets = new Map<BoardColumnId, Issue[]>()
   const pinnedSet = new Set(pinnedIds)
+  const recentlyMovedSet = new Set(recentlyMovedIds)
 
   for (const column of BOARD_COLUMNS) {
     buckets.set(column.id, [])
@@ -502,7 +508,7 @@ export function groupIssuesForBoard(issues: Issue[], pinnedIds: string[] = []): 
   }
 
   return BOARD_COLUMNS.map(definition => {
-    const columnIssues = [...(buckets.get(definition.id) ?? [])].sort((a, b) => compareBoardIssuesWithPinned(a, b, pinnedSet))
+    const columnIssues = [...(buckets.get(definition.id) ?? [])].sort((a, b) => compareBoardIssuesWithPinned(a, b, pinnedSet, recentlyMovedSet))
 
     return {
       definition,

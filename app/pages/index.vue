@@ -93,6 +93,7 @@ const DEFAULT_HIDDEN_BOARD_COLUMNS: BoardColumnId[] = ['in_progress', 'blocked',
 const hiddenBoardColumns = useProjectStorage<BoardColumnId[]>('hiddenBoardColumns', [...DEFAULT_HIDDEN_BOARD_COLUMNS])
 const boardColumnVisibilityInitialized = useProjectStorage('boardColumnVisibilityInitialized', false)
 const activeBoardMoveId = ref<string | null>(null)
+const recentlyMovedBoardIssueIds = ref<string[]>([])
 const issuesViewMeta: Record<IssuesView, { label: string, description: string }> = {
   table: {
     label: 'Table',
@@ -550,7 +551,7 @@ const inProgressIssues = computed(() => {
 // Pinned issues
 const { pinnedIssueIds, pinnedSortMode, togglePin, reorderPinned, toggleSortMode: togglePinnedSort, getPinnedIssues } = usePinnedIssues()
 const pinnedIssuesList = computed(() => getPinnedIssues(issues.value))
-const boardColumns = computed(() => groupIssuesForBoard(sortedIssues.value, pinnedIssueIds.value))
+const boardColumns = computed(() => groupIssuesForBoard(sortedIssues.value, pinnedIssueIds.value, recentlyMovedBoardIssueIds.value))
 
 const handleRemoveLabelFilter = (label: string) => {
   toggleLabelFilter(label)
@@ -633,6 +634,10 @@ const handleBoardMove = async (issueId: string, columnId: BoardColumnId) => {
   const selectedPreviousUpdatedAt = selectedIssue.value?.id === issueId ? selectedIssue.value.updatedAt : null
 
   activeBoardMoveId.value = issueId
+  recentlyMovedBoardIssueIds.value = [
+    issueId,
+    ...recentlyMovedBoardIssueIds.value.filter(id => id !== issueId),
+  ].slice(0, 20)
   applyLocalIssueStatus(issueId, targetStatus)
 
   const updated = await updateIssue(issueId, { status: targetStatus })

@@ -321,6 +321,16 @@ describe('board helpers', () => {
 
     expect(columns[0]!.issues.map(issue => issue.id)).toEqual(['deferred-1', 'open-1', 'hooked-1'])
   })
+
+  it('places recently moved board issues after pinned issues', () => {
+    const columns = groupIssuesForBoard([
+      makeIssue({ id: 'pinned-1', status: 'in_progress', priority: 'p4' }),
+      makeIssue({ id: 'fresh-1', status: 'in_progress', priority: 'p3' }),
+      makeIssue({ id: 'urgent-1', status: 'in_progress', priority: 'p0' }),
+    ], ['pinned-1'], ['fresh-1'])
+
+    expect(columns[1]!.issues.map(issue => issue.id)).toEqual(['pinned-1', 'fresh-1', 'urgent-1'])
+  })
 })
 
 // ---------------------------------------------------------------------------

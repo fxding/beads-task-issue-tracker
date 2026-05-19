@@ -157,9 +157,7 @@ const runFlipAnimation = async () => {
   const runId = ++flipAnimationRunId
   const previousRects = new Map(cardRects)
   const changedIssueIds = getMovedIssueIds()
-  if (changedIssueIds.size === 0) {
-    getChangedIssueIds().forEach(issueId => changedIssueIds.add(issueId))
-  }
+  getChangedIssueIds().forEach(issueId => changedIssueIds.add(issueId))
 
   await nextTick()
 
@@ -191,16 +189,21 @@ const runFlipAnimation = async () => {
     card.getAnimations?.().forEach(animation => animation.cancel())
     card.animate([
       {
-        transform: `translate(${deltaX}px, ${deltaY}px) scale(0.985)`,
-        boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
+        transform: `translate3d(${deltaX}px, ${deltaY}px, 0)`,
+        offset: 0,
       },
       {
-        transform: 'translate(0, 0) scale(1)',
-        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+        transform: `translate3d(${deltaX * 0.18}px, ${deltaY * 0.18}px, 0)`,
+        offset: 0.72,
+      },
+      {
+        transform: 'translate3d(0, 0, 0)',
+        offset: 1,
       },
     ], {
-      duration: 240,
-      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      duration: 340,
+      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      fill: 'both',
     })
   })
 
