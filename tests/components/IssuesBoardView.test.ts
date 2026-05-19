@@ -67,7 +67,7 @@ describe('IssuesBoardView', () => {
     expect(wrapper.text()).toContain('Pinned')
   })
 
-  it('hides empty columns and exposes them through restore controls', () => {
+  it('renders empty columns when they are not hidden', () => {
     const columns = groupIssuesForBoard([makeIssue({ id: 'open-1', status: 'open' })])
 
     const wrapper = mount(IssuesBoardView, {
@@ -78,10 +78,32 @@ describe('IssuesBoardView', () => {
     })
 
     expect(wrapper.text()).toContain('Backlog')
-    expect(wrapper.text()).not.toContain('In Progress0')
+    expect(wrapper.text()).toContain('In Progress')
+    expect(wrapper.text()).toContain('Blocked')
+    expect(wrapper.text()).toContain('Done')
+    expect(wrapper.text()).toContain('No issues')
+  })
+
+  it('shows an empty lane after it is toggled visible', async () => {
+    const columns = groupIssuesForBoard([makeIssue({ id: 'open-1', status: 'open' })])
+
+    const wrapper = mount(IssuesBoardView, {
+      props: {
+        columns,
+        hiddenColumns: ['in_progress', 'blocked', 'done'],
+      },
+    })
+
     expect(wrapper.text()).toContain('Show In Progress')
-    expect(wrapper.text()).toContain('Show Blocked')
-    expect(wrapper.text()).toContain('Show Done')
+
+    await wrapper.setProps({
+      hiddenColumns: ['blocked', 'done'],
+    })
+
+    expect(wrapper.text()).toContain('In Progress')
+    expect(wrapper.findAll('section')).toHaveLength(2)
+    expect(wrapper.find('button[aria-label="Hide In Progress column"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Show In Progress')
   })
 
   it('shows a manually hidden lane through restore controls even when it has issues', () => {

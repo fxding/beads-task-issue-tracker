@@ -28,14 +28,14 @@ const previousColumnIssueIds = new Map<BoardColumnId, string[]>()
 
 const visibleColumns = computed(() =>
   props.columns.filter(column =>
-    !props.hiddenColumns.includes(column.definition.id) && column.issues.length > 0,
+    !props.hiddenColumns.includes(column.definition.id),
   ),
 )
 
 const hiddenColumnLabels = computed(() =>
   props.columns
     .filter(column =>
-      props.hiddenColumns.includes(column.definition.id) || column.issues.length === 0,
+      props.hiddenColumns.includes(column.definition.id),
     )
     .map(column => ({ id: column.definition.id, label: column.definition.label })),
 )
