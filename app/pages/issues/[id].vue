@@ -61,6 +61,7 @@ const {
   openAddRelationDialog,
   availableIssuesForDeps,
   initRelationTypes,
+  openCreateIssueDialog,
 } = useIssueDialogs()
 const { projects } = useProjects()
 const { beadsPath, hasStoredPath, setPath } = useBeadsPath()
@@ -176,10 +177,7 @@ const handleNavigateToIssue = async (id: string) => {
 }
 
 const handleCreateChild = async (parentId: string) => {
-  await router.push({
-    path: '/issues/new',
-    query: { parent: parentId },
-  })
+  openCreateIssueDialog(parentId)
 }
 
 const openFolderPicker = () => {

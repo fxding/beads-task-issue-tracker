@@ -9,6 +9,10 @@ const isCreatingNew = ref(false)
 const multiSelectMode = ref(false)
 const selectedIds = ref<string[]>([])
 
+// Create issue dialog
+const isCreateIssueDialogOpen = ref(false)
+const createIssueDefaultParent = ref<string | undefined>(undefined)
+
 // Delete confirmation dialog
 const isDeleteDialogOpen = ref(false)
 const deleteTargetTitles = ref<string[]>([])
@@ -100,6 +104,16 @@ export function useIssueDialogs() {
       .filter(i => !query || i.id.toLowerCase().includes(query) || i.title.toLowerCase().includes(query))
       .slice(0, 15)
   })
+
+  const openCreateIssueDialog = (defaultParent?: string) => {
+    createIssueDefaultParent.value = defaultParent
+    isCreateIssueDialogOpen.value = true
+  }
+
+  const closeCreateIssueDialog = () => {
+    isCreateIssueDialogOpen.value = false
+    createIssueDefaultParent.value = undefined
+  }
 
   // Toggle multi-select mode
   const toggleMultiSelect = () => {
@@ -512,6 +526,12 @@ export function useIssueDialogs() {
     multiSelectMode,
     selectedIds,
     toggleMultiSelect,
+
+    // Create issue dialog
+    isCreateIssueDialogOpen,
+    createIssueDefaultParent,
+    openCreateIssueDialog,
+    closeCreateIssueDialog,
 
     // Delete dialog
     isDeleteDialogOpen,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import StatusBadge from '~/components/issues/StatusBadge.vue'
+import CreateIssueDialog from '~/components/issues/CreateIssueDialog.vue'
 import { Button } from '~/components/ui/button'
 import { ConfirmDialog } from '~/components/ui/confirm-dialog'
 import {
@@ -12,12 +13,15 @@ import {
 } from '~/components/ui/dialog'
 import ImagePreviewDialog from '~/components/ui/image-preview/ImagePreviewDialog.vue'
 import MarkdownPreviewDialog from '~/components/ui/markdown-preview/MarkdownPreviewDialog.vue'
+import type { CreateIssuePayload } from '~/types/issue'
 
 const {
+  isCreateIssueDialogOpen, createIssueDefaultParent, closeCreateIssueDialog,
   isDeleteDialogOpen, deleteTargetTitles, isDeleting, confirmDelete,
   isEpicDeleteDialogOpen, epicToDelete, epicChildren, isDeletingEpic, confirmEpicDelete,
   isCloseDialogOpen, isClosing, confirmClose,
   isDetachDialogOpen, detachImagePath, isDetaching, handleDetachImage,
+  bdDotNotationParent,
   isRemoveDepDialogOpen, pendingDepRemoval, isRemovingDep, handleRemoveDependency,
   availableRelationTypes, availableIssuesForDeps, priorityTextColor,
   isAddBlockerDialogOpen, addBlockerIssueId, addBlockerSearchQuery, addBlockerSelectedTarget, addBlockerFilteredOptions, isAddingBlocker, handleAddBlocker,
@@ -25,12 +29,58 @@ const {
   isRemoveRelDialogOpen, pendingRelRemoval, isRemovingRel, handleRemoveRelation,
 } = useIssueDialogs()
 
-const { selectedIssue } = useIssues()
+const { selectedIssue, issues, isLoading, createIssue, fetchIssue, selectIssue } = useIssues()
+const { fetchStats } = useDashboard()
+const { projects } = useProjects()
+const { beadsPath } = useBeadsPath()
+const { success: notifySuccess, error: notifyError } = useNotification()
+const router = useRouter()
 const imagePreview = useImagePreview()
 const markdownPreview = useMarkdownPreview()
+
+const currentProjectName = computed(() => {
+  const project = projects.value.find(p => p.path === beadsPath.value)
+  return project?.name
+})
+
+const availableEpics = computed(() => {
+  return issues.value
+    .filter(issue => issue.type === 'epic' && issue.status !== 'closed')
+    .map(issue => ({ id: issue.id, title: issue.title }))
+})
+
+const handleCreateIssue = async (payload: CreateIssuePayload) => {
+  try {
+    const result = await createIssue(payload)
+    if (!result) {
+      notifyError('Failed to create issue')
+      return
+    }
+
+    selectIssue(result)
+    await fetchIssue(result.id)
+    await fetchStats(issues.value)
+    notifySuccess('Issue created')
+    closeCreateIssueDialog()
+    await router.push(`/issues/${encodeURIComponent(result.id)}`)
+  } catch {
+    notifyError('Failed to create issue')
+  }
+}
 </script>
 
 <template>
+  <CreateIssueDialog
+    :open="isCreateIssueDialogOpen"
+    :is-saving="isLoading"
+    :available-epics="availableEpics"
+    :default-parent="createIssueDefaultParent"
+    :dot-notation-parent="bdDotNotationParent"
+    :current-project-name="currentProjectName"
+    @update:open="(value) => { if (!value) closeCreateIssueDialog() }"
+    @create="handleCreateIssue"
+  />
+
   <!-- Delete Confirmation Dialog -->
   <ConfirmDialog
     v-model:open="isDeleteDialogOpen"

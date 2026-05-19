@@ -319,6 +319,7 @@ const {
   toggleMultiSelect,
   handleDeleteIssue,
   initRelationTypes,
+  openCreateIssueDialog,
 } = useIssueDialogs()
 
 // Handlers
@@ -473,7 +474,7 @@ const handleReset = () => {
 
 const handleAddIssue = () => {
   selectIssue(null)
-  router.push('/issues/new')
+  openCreateIssueDialog()
 }
 
 const handleSelectIssue = async (issue: Issue) => {
