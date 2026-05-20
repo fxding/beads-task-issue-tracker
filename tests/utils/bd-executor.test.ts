@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const execMock = vi.fn()
+const connectMock = vi.fn()
+const disconnectMock = vi.fn()
+const updateMock = vi.fn()
 
-vi.mock('node:child_process', async () => {
-  const actual = await vi.importActual<typeof import('node:child_process')>('node:child_process')
+vi.mock('@herbcaudill/beads-sdk', () => {
   return {
-    ...actual,
-    default: {
-      ...actual,
-      exec: execMock,
-    },
-    exec: execMock,
+    BeadsClient: vi.fn(function BeadsClient() {
+      return {
+        connect: connectMock,
+        disconnect: disconnectMock,
+        update: updateMock,
+      }
+    }),
   }
 })
 
@@ -114,23 +116,44 @@ describe('unwrapBrEnvelope', () => {
 
 describe('bdUpdate', () => {
   beforeEach(() => {
-    execMock.mockReset()
-    execMock.mockImplementation((command, options, callback) => {
-      callback(null, { stdout: '{}', stderr: '' })
+    connectMock.mockReset()
+    disconnectMock.mockReset()
+    updateMock.mockReset()
+    connectMock.mockResolvedValue(undefined)
+    disconnectMock.mockResolvedValue(undefined)
+    updateMock.mockResolvedValue({
+      id: 'beads-task-issue-tracker-kya',
+      title: 'Keep title only',
+      description: '',
+      status: 'open',
+      priority: 2,
+      issue_type: 'task',
+      labels: [],
+      created_at: '2025-06-15T09:30:00Z',
+      updated_at: '2025-06-15T10:45:00Z',
+      dependency_count: 0,
+      dependent_count: 0,
+      dependencies: [],
+      dependents: [],
     })
   })
 
-  it('forwards empty acceptance criteria so bd can clear the field', async () => {
-    await bdUpdate('beads-task-issue-tracker-kya', { acceptance: '' }, '/tmp/project')
+  it('forwards empty acceptance criteria so beads-sdk can clear the field', async () => {
+    const result = await bdUpdate('beads-task-issue-tracker-kya', { acceptance: '' }, '/tmp/project')
 
-    expect(execMock).toHaveBeenCalledTimes(1)
-    expect(execMock.mock.calls[0]?.[0]).toContain('--acceptance=""')
+    expect(result.success).toBe(true)
+    expect(connectMock).toHaveBeenCalledWith('/tmp/project')
+    expect(updateMock).toHaveBeenCalledWith('beads-task-issue-tracker-kya', {
+      acceptance_criteria: '',
+    })
+    expect(disconnectMock).toHaveBeenCalledTimes(1)
   })
 
   it('still omits acceptance criteria when the field is not present', async () => {
     await bdUpdate('beads-task-issue-tracker-kya', { title: 'Keep title only' }, '/tmp/project')
 
-    expect(execMock).toHaveBeenCalledTimes(1)
-    expect(execMock.mock.calls[0]?.[0]).not.toContain('--acceptance=')
+    expect(updateMock).toHaveBeenCalledTimes(1)
+    expect(updateMock.mock.calls[0]?.[1]).toMatchObject({ title: 'Keep title only' })
+    expect(updateMock.mock.calls[0]?.[1]).not.toHaveProperty('acceptance_criteria')
   })
 })

@@ -1,7 +1,13 @@
-import { exec } from 'node:child_process'
-import { promisify } from 'node:util'
-
-const execAsync = promisify(exec)
+import { BeadsClient } from '@herbcaudill/beads-sdk'
+import type {
+  CreateInput,
+  Issue,
+  ListFilter,
+  Priority,
+  ReadyFilter,
+  Status,
+  UpdateInput,
+} from '@herbcaudill/beads-sdk'
 
 export interface BdExecutorOptions {
   args?: string[]
@@ -12,6 +18,13 @@ export interface BdResult<T = unknown> {
   success: boolean
   data?: T
   error?: string
+}
+
+type BdIssueWithCliAliases = Issue & {
+  owner?: string
+  blocked_by?: string[]
+  blocks?: string[]
+  estimate?: number
 }
 
 /**
@@ -32,48 +45,23 @@ export function unwrapBrEnvelope<T = unknown>(data: unknown): T[] {
   return []
 }
 
-/**
- * Execute a bd CLI command and return JSON output
- * @param command - The bd command to execute
- * @param options - Options including args and working directory
- */
-export async function executeBd<T = unknown>(
-  command: string,
-  options: BdExecutorOptions = {}
+function getWorkingDir(cwd?: string): string {
+  return cwd || process.env.BEADS_PATH || process.cwd()
+}
+
+async function withBdClient<T>(
+  cwd: string | undefined,
+  operation: (client: BeadsClient) => Promise<T>
 ): Promise<BdResult<T>> {
-  // Priority: options.cwd > BEADS_PATH env > process.cwd()
-  const workingDir = options.cwd || process.env.BEADS_PATH || process.cwd()
-  const args = options.args?.join(' ') || ''
-  const fullCommand = `bd ${command} ${args} --json`.trim()
+  const workingDir = getWorkingDir(cwd)
+  const client = new BeadsClient({ actor: 'beads-task-issue-tracker' })
 
   try {
-    const { stdout, stderr } = await execAsync(fullCommand, {
-      cwd: workingDir,
-      env: {
-        ...process.env,
-        BEADS_PATH: workingDir,
-      },
-    })
-
-    if (stderr && !stdout) {
-      return {
-        success: false,
-        error: stderr.trim(),
-      }
-    }
-
-    try {
-      const data = JSON.parse(stdout) as T
-      return {
-        success: true,
-        data,
-      }
-    } catch {
-      // If output is not JSON, return raw output
-      return {
-        success: true,
-        data: stdout.trim() as unknown as T,
-      }
+    await client.connect(workingDir)
+    const data = await operation(client)
+    return {
+      success: true,
+      data,
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
@@ -81,6 +69,187 @@ export async function executeBd<T = unknown>(
       success: false,
       error: errorMessage,
     }
+  } finally {
+    await client.disconnect().catch(() => {})
+  }
+}
+
+function normalizePriority(priority: string | number): Priority {
+  const parsed = typeof priority === 'number' ? priority : Number.parseInt(priority, 10)
+  return [0, 1, 2, 3, 4].includes(parsed) ? (parsed as Priority) : 3
+}
+
+function normalizeIssue(issue: Issue): BdIssueWithCliAliases {
+  const blockedBy = issue.dependencies
+    ?.filter(dep => dep.dependency_type === 'blocks')
+    .map(dep => dep.id)
+  const blocks = issue.dependents
+    ?.filter(dep => dep.dependency_type === 'blocks')
+    .map(dep => dep.id)
+
+  return {
+    ...issue,
+    owner: issue.owner || issue.assignee,
+    blocked_by: blockedBy,
+    blocks,
+  }
+}
+
+function normalizeIssues(issues: Issue[]): BdIssueWithCliAliases[] {
+  return issues.map(normalizeIssue)
+}
+
+function toListFilter(filters?: {
+  status?: string[]
+  type?: string[]
+  priority?: string[]
+  assignee?: string
+  includeAll?: boolean
+}): ListFilter {
+  const filter: ListFilter = {
+    limit: filters?.includeAll ? 10000 : 50,
+  }
+
+  if (filters?.status?.length === 1 && filters.status[0]) {
+    filter.status = filters.status[0] as Status
+  }
+  if (filters?.type?.length === 1 && filters.type[0]) {
+    filter.issue_type = filters.type[0]
+  }
+  if (filters?.priority?.length === 1 && filters.priority[0]) {
+    filter.priority = normalizePriority(filters.priority[0])
+  }
+  if (filters?.assignee) {
+    filter.assignee = filters.assignee
+  }
+
+  return filter
+}
+
+function applyClientSideListFilters(
+  issues: Issue[],
+  filters?: {
+    status?: string[]
+    type?: string[]
+    priority?: string[]
+    assignee?: string
+    includeAll?: boolean
+  }
+): Issue[] {
+  return issues.filter((issue) => {
+    if (filters?.status?.length && !filters.status.includes(issue.status)) {
+      return false
+    }
+    if (filters?.type?.length && !filters.type.includes(issue.issue_type)) {
+      return false
+    }
+    if (
+      filters?.priority?.length
+      && !filters.priority.map(normalizePriority).includes(issue.priority)
+    ) {
+      return false
+    }
+    if (filters?.assignee && issue.assignee !== filters.assignee && issue.owner !== filters.assignee) {
+      return false
+    }
+    if (!filters?.includeAll && issue.status === 'closed') {
+      return false
+    }
+    return true
+  })
+}
+
+function toCreateInput(
+  title: string,
+  options?: {
+    description?: string
+    type?: string
+    priority?: string
+    assignee?: string
+    labels?: string[]
+    externalRef?: string
+    estimate?: number
+    design?: string
+    acceptance?: string
+    notes?: string
+  }
+): CreateInput {
+  const input: CreateInput = {
+    title,
+  }
+
+  if (options?.description !== undefined) input.description = options.description
+  if (options?.type !== undefined) input.issue_type = options.type
+  if (options?.priority !== undefined) input.priority = normalizePriority(options.priority)
+  if (options?.assignee !== undefined) input.assignee = options.assignee
+  if (options?.labels !== undefined) input.labels = options.labels
+  if (options?.design !== undefined) input.design = options.design
+  if (options?.acceptance !== undefined) input.acceptance_criteria = options.acceptance
+
+  return input
+}
+
+function toUpdateInput(updates: {
+  title?: string
+  description?: string
+  type?: string
+  status?: string
+  priority?: string
+  assignee?: string
+  labels?: string[]
+  externalRef?: string
+  estimate?: number
+  design?: string
+  acceptance?: string
+  notes?: string
+}): UpdateInput {
+  const input: UpdateInput = {}
+
+  if (updates.title !== undefined) input.title = updates.title
+  if (updates.description !== undefined) input.description = updates.description
+  if (updates.type !== undefined) input.issue_type = updates.type
+  if (updates.status !== undefined) input.status = updates.status
+  if (updates.priority !== undefined) input.priority = normalizePriority(updates.priority)
+  if (updates.assignee !== undefined) input.assignee = updates.assignee
+  if (updates.labels !== undefined) input.add_labels = updates.labels
+  if (updates.design !== undefined) input.design = updates.design
+  if (updates.acceptance !== undefined) input.acceptance_criteria = updates.acceptance
+  if (updates.notes !== undefined) input.notes = updates.notes
+
+  return input
+}
+
+/**
+ * Execute a bd operation and return JSON-compatible output.
+ * Kept for compatibility with older call sites; new code should prefer the typed helpers below.
+ */
+export async function executeBd<T = unknown>(
+  command: string,
+  options: BdExecutorOptions = {}
+): Promise<BdResult<T>> {
+  switch (command) {
+    case 'list':
+      return bdList({}, options.cwd) as Promise<BdResult<T>>
+    case 'ready':
+      return bdReady(options.cwd) as Promise<BdResult<T>>
+    case 'status':
+      return bdStatus(options.cwd) as Promise<BdResult<T>>
+    case 'count':
+      return bdCount(options.cwd) as Promise<BdResult<T>>
+    case 'show':
+      if (!options.args?.[0]) return { success: false, error: 'Issue ID is required' }
+      return bdShow(options.args[0], options.cwd) as Promise<BdResult<T>>
+    case 'close':
+      if (!options.args?.[0]) return { success: false, error: 'Issue ID is required' }
+      return bdClose(options.args[0], options.cwd) as Promise<BdResult<T>>
+    case 'delete':
+      if (!options.args?.[0]) return { success: false, error: 'Issue ID is required' }
+      return bdDelete(options.args[0], options.cwd) as Promise<BdResult<T>>
+    default:
+      return {
+        success: false,
+        error: `Unsupported SDK operation: ${command}`,
+      }
   }
 }
 
@@ -97,46 +266,22 @@ export async function bdList(
   },
   cwd?: string
 ) {
-  const args: string[] = []
-
-  // --all includes closed issues (used for search)
-  if (filters?.includeAll) {
-    args.push('--all')
-  }
-
-  if (filters?.status?.length) {
-    args.push(`--status=${filters.status.join(',')}`)
-  }
-  if (filters?.type?.length) {
-    args.push(`--type=${filters.type.join(',')}`)
-  }
-  if (filters?.priority?.length) {
-    args.push(`--priority=${filters.priority.join(',')}`)
-  }
-  if (filters?.assignee) {
-    args.push(`--assignee=${filters.assignee}`)
-  }
-
-  return executeBd('list', { args, cwd })
+  return withBdClient(cwd, async (client) => {
+    const issues = await client.list(toListFilter(filters))
+    return normalizeIssues(applyClientSideListFilters(issues, filters))
+  })
 }
 
 /**
  * Execute bd show command
  */
 export async function bdShow(id: string, cwd?: string) {
-  return executeBd('show', { args: [id], cwd })
+  return withBdClient(cwd, async client => normalizeIssue(await client.show(id)))
 }
 
 /**
  * Execute bd create command
  */
-/**
- * Escape double quotes in a string for shell arguments
- */
-function escapeQuotes(str: string): string {
-  return str.replace(/"/g, '\\"')
-}
-
 export async function bdCreate(
   title: string,
   options?: {
@@ -153,40 +298,7 @@ export async function bdCreate(
   },
   cwd?: string
 ) {
-  const args: string[] = [`"${title}"`]
-
-  if (options?.description) {
-    args.push(`--description="${escapeQuotes(options.description)}"`)
-  }
-  if (options?.type) {
-    args.push(`--type=${options.type}`)
-  }
-  if (options?.priority) {
-    args.push(`--priority=${options.priority}`)
-  }
-  if (options?.assignee) {
-    args.push(`--assignee=${options.assignee}`)
-  }
-  if (options?.labels?.length) {
-    args.push(`--labels=${options.labels.join(',')}`)
-  }
-  if (options?.externalRef) {
-    args.push(`--external-ref="${escapeQuotes(options.externalRef)}"`)
-  }
-  if (options?.estimate) {
-    args.push(`--estimate=${options.estimate}`)
-  }
-  if (options?.design) {
-    args.push(`--design="${escapeQuotes(options.design)}"`)
-  }
-  if (options?.acceptance) {
-    args.push(`--acceptance="${escapeQuotes(options.acceptance)}"`)
-  }
-  if (options?.notes) {
-    args.push(`--notes="${escapeQuotes(options.notes)}"`)
-  }
-
-  return executeBd('create', { args, cwd })
+  return withBdClient(cwd, async client => normalizeIssue(await client.create(toCreateInput(title, options))))
 }
 
 /**
@@ -210,88 +322,54 @@ export async function bdUpdate(
   },
   cwd?: string
 ) {
-  const args: string[] = [id]
-
-  if (updates.title !== undefined) {
-    args.push(`--title="${escapeQuotes(updates.title)}"`)
-  }
-  if (updates.description !== undefined) {
-    args.push(`--description="${escapeQuotes(updates.description)}"`)
-  }
-  if (updates.type) {
-    args.push(`--type=${updates.type}`)
-  }
-  if (updates.status) {
-    args.push(`--status=${updates.status}`)
-  }
-  if (updates.priority) {
-    args.push(`--priority=${updates.priority}`)
-  }
-  if (updates.assignee) {
-    args.push(`--assignee=${updates.assignee}`)
-  }
-  if (updates.labels) {
-    args.push(`--set-labels=${updates.labels.join(',')}`)
-  }
-  if (updates.externalRef) {
-    args.push(`--external-ref="${escapeQuotes(updates.externalRef)}"`)
-  }
-  if (updates.estimate !== undefined) {
-    args.push(`--estimate=${updates.estimate}`)
-  }
-  if (updates.design !== undefined) {
-    args.push(`--design="${escapeQuotes(updates.design)}"`)
-  }
-  if (updates.acceptance !== undefined) {
-    args.push(`--acceptance="${escapeQuotes(updates.acceptance)}"`)
-  }
-  if (updates.notes !== undefined) {
-    args.push(`--notes="${escapeQuotes(updates.notes)}"`)
-  }
-
-  return executeBd('update', { args, cwd })
+  return withBdClient(cwd, async client => normalizeIssue(await client.update(id, toUpdateInput(updates))))
 }
 
 /**
  * Execute bd close command
  */
 export async function bdClose(id: string, cwd?: string) {
-  return executeBd('close', { args: [id], cwd })
+  return withBdClient(cwd, async client => normalizeIssue(await client.close(id)))
 }
 
 /**
  * Execute bd status command (dashboard stats)
  */
 export async function bdStatus(cwd?: string) {
-  return executeBd('status', { cwd })
+  return withBdClient(cwd, async client => client.stats())
 }
 
 /**
  * Execute bd count command (grouped counts)
  */
 export async function bdCount(cwd?: string) {
-  return executeBd('count', { cwd })
+  return bdList({}, cwd)
 }
 
 /**
  * Execute bd ready command (available work)
  */
 export async function bdReady(cwd?: string) {
-  return executeBd('ready', { cwd })
+  const filter: ReadyFilter = { limit: 10000 }
+  return withBdClient(cwd, async client => normalizeIssues(await client.ready(filter)))
 }
 
 /**
  * Execute bd delete command
  */
 export async function bdDelete(id: string, cwd?: string) {
-  return executeBd('delete', { args: [id, '--force'], cwd })
+  return withBdClient(cwd, async (client) => {
+    await client.delete(id)
+    return { success: true, id }
+  })
 }
 
 /**
  * Execute bd comments add command
  */
 export async function bdCommentsAdd(id: string, content: string, cwd?: string) {
-  // Escape double quotes in content
-  const escapedContent = content.replace(/"/g, '\\"')
-  return executeBd('comments add', { args: [id, `"${escapedContent}"`], cwd })
+  return withBdClient(cwd, async (client) => {
+    await client.addComment(id, content)
+    return { success: true }
+  })
 }

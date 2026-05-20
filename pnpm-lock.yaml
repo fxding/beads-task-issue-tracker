@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@herbcaudill/beads-sdk':
+        specifier: link:/Users/fuxian/Documents/GitHub/beads-sdk
+        version: link:../beads-sdk
       '@tanstack/vue-table':
         specifier: ^8.21.3
         version: 8.21.3(vue@3.5.27(typescript@5.9.3))
